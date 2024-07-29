@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"unsafe"
 
 	"github.com/wdantuma/signalk-radar/radar"
 	"github.com/wdantuma/signalk-radar/source"
@@ -13,7 +14,7 @@ const GARMIN_XHD_MAX_SPOKE_LEN = 705
 
 type garminxhd struct {
 	label        string
-	source       chan radar.RadarMessage
+	source       chan *radar.RadarMessage
 	reportSource source.FrameSource
 	dataSource   source.FrameSource
 }
@@ -37,13 +38,13 @@ type RadarLine struct {
 
 func NewGarminXhd(reportSource source.FrameSource, dataSource source.FrameSource) *garminxhd {
 
-	garminxhd := &garminxhd{label: "GarminXHD", reportSource: reportSource, dataSource: dataSource, source: make(chan radar.RadarMessage)}
+	garminxhd := &garminxhd{label: "GarminXHD", reportSource: reportSource, dataSource: dataSource, source: make(chan *radar.RadarMessage)}
 	garminxhd.start()
 
 	return garminxhd
 }
 
-func (g *garminxhd) Source() chan radar.RadarMessage {
+func (g *garminxhd) Source() chan *radar.RadarMessage {
 	return g.source
 }
 
@@ -91,9 +92,24 @@ func (g *garminxhd) processData(dataBytes []byte) {
 	dataReader := bytes.NewReader(dataBytes)
 	var line RadarLine
 	err := binary.Read(dataReader, binary.LittleEndian, &line)
+
 	if err == nil {
-		//data := io.ReadFull(dataReader,10)
-		fmt.Printf("%d,%d,%d\n", line.Angle/8, line.DisplayMeters, line.ScanLength)
+		data := make([]byte, int(len(dataBytes)-int(unsafe.Sizeof(line))))
+		err = binary.Read(dataReader, binary.LittleEndian, data)
+		if err == nil {
+			angle := uint32(line.Angle / 8)
+			var bearing uint32
+			r := uint32(line.DisplayMeters)
+			message := radar.RadarMessage{
+				Spoke: &radar.RadarMessage_Spoke{
+					Angle:   &angle,
+					Bearing: &bearing,
+					Range:   &r,
+					Data:    data,
+				},
+			}
+			g.source <- &message
+		}
 	} else {
 		fmt.Printf("%s\n", err)
 	}

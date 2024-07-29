@@ -1,6 +1,7 @@
 package garminxhd
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/wdantuma/signalk-radar/radar"
@@ -20,5 +21,7 @@ func TestGarmin(t *testing.T) {
 
 	source.Start()
 
-	<-garmin.Source()
+	for m := range garmin.Source() {
+		fmt.Printf("%d\n", *m.Spoke.Angle)
+	}
 }
