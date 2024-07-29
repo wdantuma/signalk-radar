@@ -1,6 +1,11 @@
 package pcapsource
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"time"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
@@ -28,8 +33,12 @@ type pcapSource struct {
 	sources []pcapFrameSource
 }
 
-func NewPcapSource(file string, loop bool) *pcapSource {
-	return &pcapSource{file: file, sources: make([]pcapFrameSource, 0), loop: loop}
+func NewPcapSource(file string, loop bool) (*pcapSource, error) {
+	if _, err := os.Stat(file); err == nil {
+		return &pcapSource{file: file, sources: make([]pcapFrameSource, 0), loop: loop}, nil
+	} else {
+		return nil, errors.New(fmt.Sprintf("Pcap file %s not found\n", file))
+	}
 }
 
 func (p *pcapSource) CreateFrameSource(label string, port int) source.FrameSource {
@@ -57,7 +66,13 @@ func (p *pcapSource) processFile() {
 		panic(err)
 	} else {
 		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+		var prevTimestamp time.Time = time.Time{}
 		for packet := range packetSource.Packets() {
+			if !prevTimestamp.Equal(time.Time{}) {
+				duration := packet.Metadata().Timestamp.Sub(prevTimestamp)
+				time.Sleep(duration)
+			}
+			prevTimestamp = packet.Metadata().Timestamp
 			if !p.running {
 				break
 			}

@@ -102,7 +102,11 @@ func main() {
 
 	if len(fileSources) > 0 {
 		for index, fs := range fileSources {
-			source := pcapsource.NewPcapSource(fs, true)
+			source, err := pcapsource.NewPcapSource(fs, true)
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				return
+			}
 			var radar radar.RadarSource
 			switch radars[index] {
 			case "garminxhd":
@@ -114,6 +118,7 @@ func main() {
 				return
 			}
 			radarServer.AddRadar(radar)
+			source.Start()
 		}
 	}
 
@@ -123,8 +128,7 @@ func main() {
 		fmt.Printf("Serving webapps from %s\n", *staticPath)
 		// setup static file server at /@signalk
 		fs := http.FileServer(http.Dir(*staticPath))
-		router.PathPrefix("/@signalk").Handler(fs)
-		router.Handle("/", http.RedirectHandler("/@signalk/freeboard-sk", http.StatusSeeOther))
+		router.PathPrefix("/").Handler(fs)
 	}
 
 	// start listening

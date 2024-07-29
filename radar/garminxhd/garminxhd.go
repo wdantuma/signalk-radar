@@ -82,10 +82,10 @@ func (g *garminxhd) start() {
 func (g *garminxhd) processReport(reportBytes []byte) {
 	reportReader := bytes.NewReader(reportBytes)
 	var packetType uint32
-	err := binary.Read(reportReader, binary.LittleEndian, &packetType)
-	if err == nil {
-		fmt.Printf("0x%X\n", packetType)
-	}
+	_ = binary.Read(reportReader, binary.LittleEndian, &packetType)
+	//if err == nil {
+	//fmt.Printf("0x%X\n", packetType)
+	//}
 }
 
 func (g *garminxhd) processData(dataBytes []byte) {
@@ -97,14 +97,11 @@ func (g *garminxhd) processData(dataBytes []byte) {
 		data := make([]byte, int(len(dataBytes)-int(unsafe.Sizeof(line))))
 		err = binary.Read(dataReader, binary.LittleEndian, data)
 		if err == nil {
-			angle := uint32(line.Angle / 8)
-			var bearing uint32
-			r := uint32(line.DisplayMeters)
 			message := radar.RadarMessage{
 				Spoke: &radar.RadarMessage_Spoke{
-					Angle:   &angle,
-					Bearing: &bearing,
-					Range:   &r,
+					Angle:   uint32(line.Angle / 8),
+					Bearing: 0,
+					Range:   uint32(line.DisplayMeters),
 					Data:    data,
 				},
 			}

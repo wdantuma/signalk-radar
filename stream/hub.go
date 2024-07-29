@@ -1,6 +1,8 @@
 package stream
 
 import (
+	"fmt"
+
 	"github.com/wdantuma/signalk-radar/radar"
 	"google.golang.org/protobuf/proto"
 )
@@ -35,21 +37,24 @@ func (h *hub) run() {
 		for {
 			select {
 			case client := <-h.register:
+				fmt.Println("Register")
 				h.clients[client] = true
 			case client := <-h.unregister:
 				if _, ok := h.clients[client]; ok {
+					fmt.Println("Un register")
 					delete(h.clients, client)
 					close(client.send)
 				}
 			case message := <-h.Broadcast:
 				bytes, err := proto.Marshal(message)
-				if err == nil {
+				if err == nil && len(bytes) > 0 {
 					for client := range h.clients {
 						select {
 						case client.send <- bytes:
 						default:
-							close(client.send)
+							fmt.Println("Send error")
 							delete(h.clients, client)
+							close(client.send)
 						}
 					}
 				}

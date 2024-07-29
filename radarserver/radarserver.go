@@ -3,7 +3,6 @@ package radarserver
 import (
 	"context"
 	"net/http"
-	"reflect"
 
 	"github.com/gorilla/mux"
 	"github.com/wdantuma/signalk-radar/radar"
@@ -60,8 +59,8 @@ func (s *radarServer) GetRadar(index int) (radar.RadarSource, bool) {
 
 func RadarMessage(value interface{}) *radar.RadarMessage {
 	switch v := value.(type) {
-	case *radar.RadarMessage:
-		return v
+	case radar.RadarMessage:
+		return &v
 	default:
 		return &radar.RadarMessage{}
 	}
@@ -73,7 +72,7 @@ func (server *radarServer) SetupServer(ctx context.Context, hostname string, rou
 		router = mux.NewRouter()
 	}
 
-	signalk := router.PathPrefix("/signalk").Subrouter()
+	signalk := router.PathPrefix("/radar").Subrouter()
 	// signalk.HandleFunc("", server.hello)
 	streamHandler := stream.NewStreamHandler(server)
 	// vesselHandler := vessel.NewVesselHandler(server)
@@ -98,20 +97,21 @@ func (server *radarServer) SetupServer(ctx context.Context, hostname string, rou
 
 	go func() {
 		for {
-			cases := make([]reflect.SelectCase, len(server.radars))
-			for i, ch := range server.radars {
-				cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch.Source())}
-			}
-			selected, value, ok := reflect.Select(cases)
-			if ok {
-				message := RadarMessage(value)
-				radar := uint32(selected)
-				message.Radar = &radar
-				streamHandler.BroadcastDelta <- message
+			value := <-server.radars[0].Source()
+			// cases := make([]reflect.SelectCase, len(server.radars))
+			// for i, ch := range server.radars {
+			// 	cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch.Source())}
+			// }
+			// selected, value, ok := reflect.Select(cases)
+			// if ok {
+			message := RadarMessage(value)
+			radar := uint32(0) //uint32(selected)
+			message.Radar = radar
+			streamHandler.BroadcastDelta <- value
 
-			} else {
-				break
-			}
+			// } else {
+			// 	break
+			// }
 		}
 		//close(sh.output)
 	}()

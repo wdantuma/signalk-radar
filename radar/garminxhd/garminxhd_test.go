@@ -12,7 +12,7 @@ func TestGarmin(t *testing.T) {
 
 	var garmin radar.RadarSource
 
-	source := pcapsource.NewPcapSource("../../examples/garmin_xhd.pcap", false)
+	source, _ := pcapsource.NewPcapSource("../../samples/garmin_xhd.pcap", false)
 
 	reportFarmeSource := source.CreateFrameSource("garminReport", 50100)
 	dataFrameSource := source.CreateFrameSource("garminData", 50102)
@@ -22,6 +22,6 @@ func TestGarmin(t *testing.T) {
 	source.Start()
 
 	for m := range garmin.Source() {
-		fmt.Printf("%d\n", *m.Spoke.Angle)
+		fmt.Printf("%d\n", m.Spoke.Angle)
 	}
 }

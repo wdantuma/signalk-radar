@@ -20,18 +20,6 @@ func NewStreamHandler(s state.ServerState) *streamHandler {
 	return &streamHandler{state: s, hub: hub, BroadcastDelta: hub.Broadcast}
 }
 
-// func (s *streamHandler) helloMessage() []byte {
-// 	hello := signalk.HelloJson{}
-// 	hello.Name = ref.String(s.state.GetName())
-// 	hello.Version = (signalk.Version)(s.state.GetVersion())
-// 	hello.Timestamp = ref.UTCTimeStamp(time.Now())
-// 	hello.Self = ref.String(s.state.GetSelf())
-// 	hello.Roles = append(hello.Roles, "master")
-// 	hello.Roles = append(hello.Roles, "main")
-// 	helloBytes, _ := json.Marshal(hello)
-// 	return helloBytes
-// }
-
 // serveWs handles websocket requests from the peer.
 func (s *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
