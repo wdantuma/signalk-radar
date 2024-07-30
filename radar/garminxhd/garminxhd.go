@@ -102,7 +102,7 @@ func (g *garminxhd) processData(dataBytes []byte) {
 				Spoke: &radar.RadarMessage_Spoke{
 					Angle:   uint32(line.Angle / 8),
 					Bearing: 0,
-					Range:   uint32(line.DisplayMeters),
+					Range:   uint32(line.RangeMeters),
 					Data:    data,
 					Time:    uint64(time.Now().UnixMilli()),
 				},

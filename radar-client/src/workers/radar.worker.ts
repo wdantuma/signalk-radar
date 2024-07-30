@@ -51,6 +51,9 @@ let m_colour_map_rgb = new Map<BlobColour,Color>()
 const thresholdRed = 255
 const thresholdGreen = 255
 const thresholdBlue = 255
+const MaxSpokeLen = 705
+const MaxSpokes = 1440
+const Heading =117
 
 function computeColourMap(doppler_states: number) {
   for (let i = 0; i <= 255; i++) {
@@ -97,14 +100,14 @@ addEventListener('message', (event) => {
   const cx = radarCanvas.width / 2
   const cy = radarCanvas.height / 2
 
-  for (let a = 0; a < 1440; a++) {
-    for (let r = 0; r < 691; r++) {
-      const angle = a * ((2 * Math.PI) / 1440)
-      const radius = r * (100 / 691)
+  for (let a = 0; a < MaxSpokes; a++) {
+    for (let r = 0; r < MaxSpokeLen; r++) {
+      const angle = a * ((2 * Math.PI) / MaxSpokes)
+      const radius = r * ((radarCanvas.width/2) / MaxSpokeLen)
       const x1 = Math.round(cx + radius * Math.cos(angle))
       const y1 = Math.round(cy + radius * Math.sin(angle))
-      x[a * 691 + r] = x1
-      y[a * 691 + r] = y1
+      x[a * MaxSpokeLen + r] = x1
+      y[a * MaxSpokeLen + r] = y1
     }
   }
 
@@ -115,29 +118,29 @@ addEventListener('message', (event) => {
   let lastAngle = 0
   let lastRange = 0
 
-  ctxWorker.fillStyle = "red"
   socket.onmessage = (event) => {
     let message = RadarMessage.deserialize(event.data)
     if (lastRange != message.spoke.range) {
       lastRange = message.spoke.range
       postMessage({ range: message.spoke.range })
-    }
+    }    
 
+    let angle = message.spoke.angle
+    angle+= Math.round((Heading-90)/ (360/MaxSpokes)) // add heading
+    angle=angle%MaxSpokes
     
-
-    const angle = message.spoke.angle * ((2 * Math.PI) / 1440)
     if (angle < lastAngle) {
      ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
     }
 
-    if (Date.now() - message.spoke.time < 1000) {
+    if (Date.now() - message.spoke.time < 1000) { // drop old spokes
       for (let i = 0; i < message.spoke.data.length; i++) {
         let ci = m_colour_map.get(message.spoke.data[i])
         if (ci != BlobColour.BLOB_NONE) {
           let color = m_colour_map_rgb.get(ci as BlobColour)
           if(color) {
-            let x1 = x[message.spoke.angle * 691 + i]
-            let y1 = y[message.spoke.angle * 691 + i]
+            let x1 = x[angle * MaxSpokeLen + i]
+            let y1 = y[angle * MaxSpokeLen + i]
             pixelData[0]=color[0]
             pixelData[1]=color[1]
             pixelData[2]=color[2]

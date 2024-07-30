@@ -11,9 +11,11 @@ import VectorSource from 'ol/source/Vector'
 import OSM from 'ol/source/OSM';
 import { fromLonLat } from 'ol/proj'
 import  Projection  from 'ol/proj/Projection'
+import {transform} from 'ol/proj'
 import { boundingExtent } from 'ol/extent'
 import Point from 'ol/geom/Point'
 import Feature from 'ol/Feature'
+import Circle from 'ol/geom/Circle'
 
 const worker = new Worker(new URL('../workers/radar.worker', import.meta.url));
 
@@ -33,24 +35,25 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
 
     // location boat  -60.841278 11.157449, -60.841278
-    const center = [-60.841278, 11.157449]
+    const center = [-60.841983, 11.157833]
     const projectedCenter = fromLonLat(center, "EPSG:3857")
     const extent = boundingExtent([[projectedCenter[0] - 100, projectedCenter[1] - 100], [projectedCenter[0] + 100, projectedCenter[1] + 100]])
 
     const projection = new Projection({
       code: 'radar',
-      units: 'pixels',
-      extent: extent,
+      units: 'm',
     });
 
     const radarCanvas = document.createElement("canvas")
-    radarCanvas.setAttribute('width','200')
-    radarCanvas.setAttribute('height','200')
+    radarCanvas.setAttribute('width','1382px')
+    radarCanvas.setAttribute('height','1382px')
 
     const offscreenRdarcanvas = radarCanvas.transferControlToOffscreen()
 
     const radarLayer = new ImageLayer({
       extent: extent,
+      maxZoom:17,
+      minZoom:10,
       source: new ImageCanvas({
         projection:projection,
         canvasFunction: (extent, resolution, ratio, size, projection) => {
@@ -68,9 +71,9 @@ export class AppComponent implements OnInit {
     worker.onmessage = (event) => {
       if (event.data.redraw) {
         radarLayer.getSource()?.changed()
-      } else if (event.data.range) {
-        const extent = boundingExtent([[projectedCenter[0] - event.data.range, projectedCenter[1] - event.data.range], [projectedCenter[0] + event.data.range, projectedCenter[1] + event.data.range]])
-        radarLayer.setExtent(extent)
+      } else if (event.data.range) {   
+        let rangeCircel = new Circle(transform(center,'EPSG:4326','EPSG:3857'),3000)
+        radarLayer.setExtent(rangeCircel.getExtent())
       }
     }
 
@@ -78,7 +81,6 @@ export class AppComponent implements OnInit {
       view: new View({
         center: projectedCenter,
         zoom: 16,
-        maxZoom:20
       }),
       layers: [
         new TileLayer({
