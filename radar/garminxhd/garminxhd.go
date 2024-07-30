@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"time"
 	"unsafe"
 
 	"github.com/wdantuma/signalk-radar/radar"
@@ -103,6 +104,7 @@ func (g *garminxhd) processData(dataBytes []byte) {
 					Bearing: 0,
 					Range:   uint32(line.DisplayMeters),
 					Data:    data,
+					Time:    uint64(time.Now().UnixMilli()),
 				},
 			}
 			g.source <- &message
