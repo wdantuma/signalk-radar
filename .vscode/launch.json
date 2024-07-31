@@ -11,7 +11,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}/cmd/signalk-radar",
-            "args": ["--file-source","../../samples/garmin_xhd.pcap","--type","garminxhd" ]
+            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../samples/garmin_xhd.pcap","--type","garminxhd" ]
         }
     ]
 }

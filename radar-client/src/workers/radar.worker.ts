@@ -112,10 +112,9 @@ addEventListener('message', (event) => {
   }
 
 
-  const socket = new WebSocket('ws://localhost:3000/radar/v1/stream');
+  const socket = new WebSocket('ws://localhost:3001/radar/v1/stream');
   socket.binaryType = "arraybuffer"
 
-  let lastAngle = 0
   let lastRange = 0
 
   socket.onmessage = (event) => {
@@ -129,11 +128,24 @@ addEventListener('message', (event) => {
     angle+= Math.round((Heading-90)/ (360/MaxSpokes)) // add heading
     angle=angle%MaxSpokes
     
-    if (angle < lastAngle) {
-     ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
-    }
-
+    // 2D context based draw implementation maybe to webgl context
     if (Date.now() - message.spoke.time < 1000) { // drop old spokes
+      // clear spoke in front
+       let clearangle1 =angle+1%MaxSpokes
+       let clearangle2 =angle+4%MaxSpokes
+       ctxWorker.save()
+       ctxWorker.beginPath()    
+       ctxWorker.strokeStyle="#00000000"
+       ctxWorker.moveTo(x[clearangle1*MaxSpokeLen+0],y[clearangle1*MaxSpokeLen+0])
+       ctxWorker.lineTo(x[clearangle1*MaxSpokeLen+MaxSpokeLen-1],y[clearangle1*MaxSpokeLen+MaxSpokeLen-1])
+       ctxWorker.lineTo(x[clearangle2*MaxSpokeLen+MaxSpokeLen-1],y[clearangle2*MaxSpokeLen+MaxSpokeLen-1])
+       ctxWorker.closePath()
+       ctxWorker.stroke()
+       ctxWorker.clip()
+       ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+       ctxWorker.restore()
+
+      // draw current spoke
       for (let i = 0; i < message.spoke.data.length; i++) {
         let ci = m_colour_map.get(message.spoke.data[i])
         if (ci != BlobColour.BLOB_NONE) {
@@ -146,16 +158,12 @@ addEventListener('message', (event) => {
             pixelData[2]=color[2]
             pixelData[3]=color[3]*255
             ctxWorker.putImageData(pixel, x1, y1)  
-            postMessage({ redraw: true })
           }
         }
       }
-    }
+      postMessage({ redraw: true })
 
-    // if (angle < lastAngle) {
-    //   postMessage({ redraw: true })
-    // }
-    lastAngle = angle
+    }
   }
 
   socket.onclose = (event) => {

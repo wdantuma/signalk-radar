@@ -2,7 +2,6 @@ package radarserver
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/wdantuma/signalk-radar/radar"
@@ -67,27 +66,14 @@ func RadarMessage(value interface{}) *radar.RadarMessage {
 }
 
 func (server *radarServer) SetupServer(ctx context.Context, hostname string, router *mux.Router) *mux.Router {
-	// var err error
 	if router == nil {
 		router = mux.NewRouter()
 	}
 
-	signalk := router.PathPrefix("/radar").Subrouter()
+	radar := router.PathPrefix("/radar").Subrouter()
 	// signalk.HandleFunc("", server.hello)
 	streamHandler := stream.NewStreamHandler(server)
-	// vesselHandler := vessel.NewVesselHandler(server)
-	// chartsHandler := charts.NewChartsHandler(server.chartsPath)
-	signalk.PathPrefix("/v1/stream").Handler(streamHandler)
-	// signalk.PathPrefix("/v1/api/vessels").Handler(vesselHandler)
-	// signalk.PathPrefix("/v2/api/resources/charts").Handler(chartsHandler)
-	signalk.HandleFunc("/v1/api/snapshot", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotImplemented)
-	})
-
-	// server.converter, err = converter.NewCanToSignalk(server)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	radar.PathPrefix("/v1/stream").Handler(streamHandler)
 
 	// canSource := server.sourcehub.Start()
 	// converted := server.converter.Convert(canSource)

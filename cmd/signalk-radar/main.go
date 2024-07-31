@@ -42,7 +42,7 @@ func main() {
 	ctx := context.Background()
 	cfg := tls.Config{}
 
-	var listenPort int = 3000
+	var listenPort int = 3001
 
 	enableTls := flag.Bool("tls", false, "Enable tls")
 	tlsCertFile := flag.String("tlscert", "", "Tls certificate file")
@@ -51,7 +51,7 @@ func main() {
 	version := flag.Bool("version", false, "Show version")
 	port := flag.Int("port", listenPort, "Listen port")
 	debug := flag.Bool("debug", false, "Enable debugging")
-	staticPath := flag.String("webapp-path", "./static", "Path to webapps")
+	staticPath := flag.String("webapp-path", "./webapps", "Path to webapps")
 	var fileSources arrayFlag
 	flag.Var(&fileSources, "file-source", "Path to pcap file")
 	var radars arrayFlag
