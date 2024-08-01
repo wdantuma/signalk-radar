@@ -87,7 +87,6 @@ addEventListener('message', (event) => {
   const radarCanvas = event.data.canvas
   const ctxWorker = radarCanvas.getContext("2d") as CanvasRenderingContext2D;
   const pixel = ctxWorker.createImageData(1, 1)
-  const offlineImage = ctxWorker.createImageData(radarCanvas.width, radarCanvas.height)
   const pixelData = pixel.data
   pixelData[0] = 0
   pixelData[1] = 0
@@ -133,6 +132,7 @@ addEventListener('message', (event) => {
       // clear spoke in front
        let clearangle1 =angle+1%MaxSpokes
        let clearangle2 =angle+4%MaxSpokes
+       ctxWorker.moveTo
        ctxWorker.save()
        ctxWorker.beginPath()    
        ctxWorker.strokeStyle="#00000000"
