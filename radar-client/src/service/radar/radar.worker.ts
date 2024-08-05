@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 
+import { Radar } from './radar.model'
 import { RadarMessage } from './RadarMessage'
 import { Color } from 'ol/color'
 
@@ -51,8 +52,6 @@ let m_colour_map_rgb = new Map<BlobColour,Color>()
 const thresholdRed = 255
 const thresholdGreen = 255
 const thresholdBlue = 255
-const MaxSpokeLen = 705
-const MaxSpokes = 1440
 const Heading =117
 
 function computeColourMap(doppler_states: number) {
@@ -83,8 +82,10 @@ function computeColourMap(doppler_states: number) {
 
 
 addEventListener('message', (event) => {
+
   computeColourMap(0)
   const radarCanvas = event.data.canvas
+  const radar = event.data.radar as Radar
   const ctxWorker = radarCanvas.getContext("2d") as CanvasRenderingContext2D;
   const pixel = ctxWorker.createImageData(1, 1)
   const pixelData = pixel.data
@@ -99,14 +100,14 @@ addEventListener('message', (event) => {
   const cx = radarCanvas.width / 2
   const cy = radarCanvas.height / 2
 
-  for (let a = 0; a < MaxSpokes; a++) {
-    for (let r = 0; r < MaxSpokeLen; r++) {
-      const angle = a * ((2 * Math.PI) / MaxSpokes)
-      const radius = r * ((radarCanvas.width/2) / MaxSpokeLen)
+  for (let a = 0; a < radar.spokes; a++) {
+    for (let r = 0; r < radar.maxSpokeLen; r++) {
+      const angle = a * ((2 * Math.PI) / radar.spokes)
+      const radius = r * ((radarCanvas.width/2) / radar.maxSpokeLen)
       const x1 = Math.round(cx + radius * Math.cos(angle))
       const y1 = Math.round(cy + radius * Math.sin(angle))
-      x[a * MaxSpokeLen + r] = x1
-      y[a * MaxSpokeLen + r] = y1
+      x[a * radar.maxSpokeLen + r] = x1
+      y[a * radar.maxSpokeLen + r] = y1
     }
   }
 
@@ -124,21 +125,21 @@ addEventListener('message', (event) => {
     }    
 
     let angle = message.spoke.angle
-    angle+= Math.round((Heading-90)/ (360/MaxSpokes)) // add heading
-    angle=angle%MaxSpokes
+    angle+= Math.round((Heading-90)/ (360/radar.spokes)) // add heading
+    angle=angle%radar.spokes
     
     // 2D context based draw implementation maybe to webgl context
     if (Date.now() - message.spoke.time < 1000) { // drop old spokes
       // clear spoke in front
-       let clearangle1 =angle+1%MaxSpokes
-       let clearangle2 =angle+4%MaxSpokes
+       let clearangle1 =angle+1%radar.spokes
+       let clearangle2 =angle+4%radar.spokes
        ctxWorker.moveTo
        ctxWorker.save()
        ctxWorker.beginPath()    
        ctxWorker.strokeStyle="#00000000"
-       ctxWorker.moveTo(x[clearangle1*MaxSpokeLen+0],y[clearangle1*MaxSpokeLen+0])
-       ctxWorker.lineTo(x[clearangle1*MaxSpokeLen+MaxSpokeLen-1],y[clearangle1*MaxSpokeLen+MaxSpokeLen-1])
-       ctxWorker.lineTo(x[clearangle2*MaxSpokeLen+MaxSpokeLen-1],y[clearangle2*MaxSpokeLen+MaxSpokeLen-1])
+       ctxWorker.moveTo(x[clearangle1*radar.maxSpokeLen+0],y[clearangle1*radar.maxSpokeLen+0])
+       ctxWorker.lineTo(x[clearangle1*radar.maxSpokeLen+radar.maxSpokeLen-1],y[clearangle1*radar.maxSpokeLen+radar.maxSpokeLen-1])
+       ctxWorker.lineTo(x[clearangle2*radar.maxSpokeLen+radar.maxSpokeLen-1],y[clearangle2*radar.maxSpokeLen+radar.maxSpokeLen-1])
        ctxWorker.closePath()
        ctxWorker.stroke()
        ctxWorker.clip()
@@ -151,8 +152,8 @@ addEventListener('message', (event) => {
         if (ci != BlobColour.BLOB_NONE) {
           let color = m_colour_map_rgb.get(ci as BlobColour)
           if(color) {
-            let x1 = x[angle * MaxSpokeLen + i]
-            let y1 = y[angle * MaxSpokeLen + i]
+            let x1 = x[angle * radar.maxSpokeLen + i]
+            let y1 = y[angle * radar.maxSpokeLen + i]
             pixelData[0]=color[0]
             pixelData[1]=color[1]
             pixelData[2]=color[2]

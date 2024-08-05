@@ -5,8 +5,7 @@ import Projection from 'ol/proj/Projection'
 import Circle from 'ol/geom/Circle'
 import {createLoader} from 'ol/source/static'
 import { Coordinate } from 'ol/coordinate';
-
-const worker = new Worker(new URL('./radar.worker', import.meta.url));
+import { Radar } from './radar.model';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +19,7 @@ export class RadarService {
     return shipLocation
   }
 
-  public createRadarSource(radar :number):ImageSource {
+  public createRadarSource(radar :Radar):ImageSource {
 
      // location boat  -60.841278 11.157449, -60.841278
      
@@ -35,8 +34,8 @@ export class RadarService {
      let rangeExtent =  new Circle(projectedCenter, range).getExtent()
  
      const radarCanvas = document.createElement("canvas")
-     radarCanvas.width = 1410 // twice 
-     radarCanvas.height =1410
+     radarCanvas.width = 2*radar.maxSpokeLen
+     radarCanvas.height =2*radar.maxSpokeLen
  
      const offscreenRdarcanvas = radarCanvas.transferControlToOffscreen()
 
@@ -46,7 +45,8 @@ export class RadarService {
          return Promise.resolve(radarCanvas)
       }})
      })  
-
+     
+    const worker = new Worker(new URL('./radar.worker', import.meta.url));
     worker.postMessage({ canvas: offscreenRdarcanvas,radar:radar }, [offscreenRdarcanvas]);
     worker.onmessage = (event) => {
       if (event.data.redraw) {
