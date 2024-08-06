@@ -1,60 +1,92 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import ImageSource from 'ol/source/Image'
 import { fromLonLat } from 'ol/proj'
 import Projection from 'ol/proj/Projection'
 import Circle from 'ol/geom/Circle'
-import {createLoader} from 'ol/source/static'
+import { createLoader } from 'ol/source/static'
 import { Coordinate } from 'ol/coordinate';
 import { Radar } from './radar.model';
+import { ShipState } from './ship-state.model '
+import { firstValueFrom, Observable } from 'rxjs'
+import {createEmpty} from 'ol/extent'
 
 @Injectable({
   providedIn: 'root'
 })
 export class RadarService {
 
-  constructor() { }
+  constructor(private http: HttpClient) { }
 
-  public GetShipLocation():Coordinate {
-    const shipLocation = [-60.841983, 11.157833]
-    return shipLocation
+  private radarServerUrl?: string;
+  private radars: Radar[] = []
+
+
+  public async Connect(radarServerUrl: string) {
+    this.radarServerUrl = radarServerUrl;
+    this.radars = await firstValueFrom(this.http.get<Radar[]>(`${this.radarServerUrl}/radar/v1/radars`))
   }
 
-  public createRadarSource(radar :Radar):ImageSource {
+  public GetRadars(): Radar[] {
+    return this.radars;
+  }
 
-     // location boat  -60.841278 11.157449, -60.841278
-     
-     const projectedCenter = fromLonLat(this.GetShipLocation(), "EPSG:3857")
- 
-     const projection = new Projection({
-       code: 'radar',
-       units: 'm',      
-     });
- 
-     let range = 3710
-     let rangeExtent =  new Circle(projectedCenter, range).getExtent()
- 
-     const radarCanvas = document.createElement("canvas")
-     radarCanvas.width = 2*radar.maxSpokeLen
-     radarCanvas.height =2*radar.maxSpokeLen
- 
-     const offscreenRdarcanvas = radarCanvas.transferControlToOffscreen()
+  public CreateRadarSource(radar: Radar, shipState: Observable<ShipState>): ImageSource {
 
-     let radarSource = new ImageSource({
-      projection:projection,
-      loader: createLoader({imageExtent:rangeExtent,url:"",load:() => {
-         return Promise.resolve(radarCanvas)
-      }})
-     })  
-     
+    let range = 0
+    let location: Coordinate = [0, 0]
+    let rangeExtent = createEmpty();
+
+    function UpdateExtent(location: Coordinate, range: number) {
+      let center = fromLonLat(location, "EPSG:3857")
+      let extent = new Circle(center, range).getExtent()
+      rangeExtent[0] = extent[0]
+      rangeExtent[1] = extent[1]
+      rangeExtent[2] = extent[2]
+      rangeExtent[3] = extent[3]
+    }
+
+    UpdateExtent(location, range)
+
+    const projection = new Projection({
+      code: 'radar',
+      units: 'm',
+    });
+
+    //
+
+    const radarCanvas = document.createElement("canvas")
+    radarCanvas.width = 2 * radar.maxSpokeLen
+    radarCanvas.height = 2 * radar.maxSpokeLen
+
+    const offscreenRdarcanvas = radarCanvas.transferControlToOffscreen()
+
+    let radarSource = new ImageSource({
+      projection: projection,
+      loader: createLoader({
+        imageExtent: rangeExtent, url: "", load: () => {
+          return Promise.resolve(radarCanvas)
+        }
+      })
+    })
+
     const worker = new Worker(new URL('./radar.worker', import.meta.url));
-    worker.postMessage({ canvas: offscreenRdarcanvas,radar:radar }, [offscreenRdarcanvas]);
+    worker.postMessage({ canvas: offscreenRdarcanvas, radar: radar }, [offscreenRdarcanvas]);
     worker.onmessage = (event) => {
       if (event.data.redraw) {
         radarSource.refresh()
-      } else if (event.data.range) {   
-        rangeExtent = new Circle(projectedCenter, event.data.range).getExtent()
+      } else if (event.data.range) {
+        range = event.data.range;
+        UpdateExtent(location, range);
+        radarSource.refresh()
       }
     }
+    shipState.subscribe((state) => {
+      location = state.location;
+      UpdateExtent(location, range);
+      worker.postMessage({ heading: state.heading });
+      radarSource.refresh()
+    })
     return radarSource
   }
 }

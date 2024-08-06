@@ -12,6 +12,7 @@ import (
 )
 
 const GARMIN_XHD_MAX_SPOKE_LEN = 705
+const GARMIN_XHD_SPOKES = 1440
 
 type garminxhd struct {
 	label        string
@@ -51,6 +52,14 @@ func (g *garminxhd) Source() chan *radar.RadarMessage {
 
 func (g *garminxhd) Label() string {
 	return g.label
+}
+
+func (g *garminxhd) Spokes() int {
+	return GARMIN_XHD_SPOKES
+}
+
+func (g *garminxhd) MaxSpokeLen() int {
+	return GARMIN_XHD_MAX_SPOKE_LEN
 }
 
 func (g *garminxhd) start() {
