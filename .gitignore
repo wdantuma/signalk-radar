@@ -1,3 +1,5 @@
 build
 webapps
 source/pcapsource/pcapsource.go
+signalk-radar-plugin/node_modules/
+plugin

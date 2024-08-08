@@ -94,7 +94,7 @@ func (server *radarServer) SetupServer(ctx context.Context, hostname string, rou
 	radar := router.PathPrefix("/radar").Subrouter()
 	streamHandler := stream.NewStreamHandler(server)
 	radar.HandleFunc("/v1/radars", server.list)
-	radar.PathPrefix("/v1/stream/{id}").Handler(streamHandler)
+	radar.PathPrefix("/v1/stream/{radarId}").Handler(streamHandler)
 	go func() {
 		for {
 			value := <-server.radars[0].Source()

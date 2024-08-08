@@ -3,8 +3,10 @@ package stream
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/wdantuma/signalk-radar/radar"
 	"github.com/wdantuma/signalk-radar/radarserver/state"
 )
@@ -22,13 +24,18 @@ func NewStreamHandler(s state.ServerState) *streamHandler {
 
 // serveWs handles websocket requests from the peer.
 func (s *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	radarId, err := strconv.Atoi(mux.Vars(r)["radarId"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &client{hub: s.hub, conn: conn, send: make(chan []byte, 1024)}
+	client := &client{radarId: radarId, hub: s.hub, conn: conn, send: make(chan []byte, 1024)}
 	//format.Json(contextFilter.Filter(client.sendDelta), client.send)
 	time.Sleep(1 * time.Second)
 	client.hub.register <- client

@@ -36,6 +36,8 @@ var upgrader = websocket.Upgrader{
 type client struct {
 	hub *hub
 
+	radarId int
+
 	// The websocket connection.
 	conn *websocket.Conn
 
