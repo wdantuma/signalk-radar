@@ -11,12 +11,6 @@ const CONFIG_SCHEMA = {
       title: 'Radar API.',
       description: 'Radarsettings.',
       properties: {
-        enable: {
-          type: 'boolean',
-          default: false,
-          title: 'Enable Radar',
-          description: ' '
-        },
         radarServerUrl: {
           type: 'string',
           title: 'Radar server url',
@@ -29,12 +23,7 @@ const CONFIG_SCHEMA = {
 };
 
 const CONFIG_UISCHEMA = {
-  radar: {
-    enable: {
-      'ui:widget': 'checkbox',
-      'ui:title': ' ',
-      'ui:help': ' '
-    },
+  radar: {   
     radarServerUrl: {
       'ui:disabled': false,
       'ui-help': ''
@@ -43,12 +32,12 @@ const CONFIG_UISCHEMA = {
 };
 
 interface RadarConfig {
-  enable: boolean;
+  enable: boolean,
   radarServerUrl: string;
 }
 
 interface SETTINGS {
-  radar: RadarConfig;
+    radar: RadarConfig;  
 }
 
 module.exports = (server: ServerAPI): Plugin => {
@@ -76,19 +65,15 @@ module.exports = (server: ServerAPI): Plugin => {
       server.debug(`Starting.`);
 
       if (typeof options !== 'undefined') {
-        settings = options;
+        settings = {...settings,...options};
       }
+      settings.radar.enable = true
 
       server.debug(`Applied config: ${JSON.stringify(settings)}`);
 
-      let msg = '';
-      if (settings.radar.enable) {
-        msg = `Started - Providing: radar`;
-      }
-      server.setPluginStatus(msg);
+      server.setPluginStatus(`Started - Providing: radar`);
     } catch (error: any) {
-      const msg = 'Started with errors!';
-      server.setPluginError(msg);
+      server.setPluginError('Started with errors!');
       server.error('** EXCEPTION: **');
       server.error(error.stack);
       return error;
@@ -98,6 +83,7 @@ module.exports = (server: ServerAPI): Plugin => {
   
   const doShutdown = () => {
     server.debug('** shutting down **');
+    settings.radar.enable = false
     const msg = 'Stopped';
     server.setPluginStatus(msg);
   };
@@ -107,26 +93,29 @@ module.exports = (server: ServerAPI): Plugin => {
 
     const radarPath = '/v1/api/radars';
     //Proxy request to radar server
-    router.all(`${radarPath}`, async (req: Request, res: Response) => {      
+    router.all(`${radarPath}`, async (req: Request, res: Response) => {     
       if(settings.radar.enable) {
-        let options:RequestInit = {
-          method:req.method
+        try {
+          let options:RequestInit = {
+            method:req.method
+          }
+          if ("POST".indexOf(req.method) >=0) {
+            options.body = req.body
+          }
+          let response = await fetch(`${settings.radar.radarServerUrl}${radarPath}`,options)
+          server.debug(`${req.method} ${radarPath}`);
+          if(response.status==200) {
+            let json = await response.json();
+            res.status(response.status).json(json);            
+          } else {
+            res.status(response.status).send(response.body);  
+          }  
+        } catch {
+          res.status(504).send("");
         }
-        if ("POST".indexOf(req.method) >=0) {
-          options.body = req.body
-        }
-        let response = await fetch(`${settings.radar.radarServerUrl}${radarPath}`,options)
-        server.debug(`${req.method} ${radarPath}`);
-        res.status(response.status);
-        if(response.status==200) {
-          let json = await response.json();
-          res.json(json);            
-        } else {
-          res.json({});
-        }
-      } else {
-        res.status(404);        
-        res.json({});
+      } else {     
+        server.debug(`${req.method} ${radarPath}`);   
+        res.status(404).send("");
       }
     });   
     router.get('/settings', (req: Request, res: Response) => {
