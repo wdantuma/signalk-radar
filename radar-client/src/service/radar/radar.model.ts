@@ -1,5 +1,6 @@
 export interface Radar {
-    label: string,
+    id: string,
+    name: string,
     spokes:number,
     maxSpokeLen :number,
     streamUrl:string

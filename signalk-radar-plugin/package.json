@@ -1,13 +1,13 @@
 {
   "name": "signalk-radar-plugin",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "Radar data provider for signalk-radar",
   "keywords": [
     "signalk-node-server-plugin",
     "signalk-category-radar"
   ],
   "signalk-plugin-enabled-by-default": false,
-  "main": "plugin/index.js",
+  "main": "dist/signalk-radar-plugin/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"

@@ -1,0 +1,73 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0-beta.1",
+    "title": "Signal K Radar API",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "components": {
+    "schemas": {
+      "RadarModel": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "spokes",
+          "maxSpokeLen",
+          "streamUrl"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "spokes": {
+            "type": "integer"
+          },
+          "maxSpokeLen": {
+            "type": "integer"
+          },
+          "streamUrl": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/api/radars": {
+      "get": {
+        "tags": [],
+        "description": "Get list of configured radars",
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/RadarModel"
+                  },
+                  "example": {
+                    "radar-0": {
+                      "id": "radar-0",
+                      "name": "Radar type",
+                      "spokes": 0,
+                      "maxSpokeLen": 0,
+                      "streamUrl": "http://localhost:3001/api/v1/stream/radar-0"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

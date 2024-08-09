@@ -50,7 +50,7 @@ func (g *garminxhd) Source() chan *radar.RadarMessage {
 	return g.source
 }
 
-func (g *garminxhd) Label() string {
+func (g *garminxhd) Name() string {
 	return g.label
 }
 
