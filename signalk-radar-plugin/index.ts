@@ -1,7 +1,5 @@
 import { Plugin, ServerAPI } from '@signalk/server-api';
-import { IRouter, Application, Request, Response, Router } from 'express';
-import { Radar } from '../radar-client/src/service/radar/radar.model'
-
+import { IRouter, Request, Response } from 'express';
 
 
 import * as openapi from './openApi.json';
@@ -49,53 +47,11 @@ interface RadarConfig {
   radarServerUrl: string;
 }
 
-export interface ParsedResponse {
-  [key: string]: Radar;
-}
-
-let radarData: Map<string, Radar> = new Map<string, Radar>();
-let server: RadarPlugin;
-let pluginId: string;
-
-
 interface SETTINGS {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   radar: RadarConfig;
 }
 
-export interface RadarPlugin
-  extends Application,
-  Omit<ServerAPI, 'registerPutHandler'> {
-  config: {
-    ssl: boolean;
-    configPath: string;
-    version: string;
-    getExternalPort: () => number;
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //handleMessage: (id: string | null, msg: any, version?: string) => void;
-  streambundle: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getSelfBus: (path: string | void) => any;
-  };
-  registerPutHandler: (
-    context: string,
-    path: string,
-    callback: (
-      context: string,
-      path: string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      actionResultCallback: (actionResult: any) => void
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) => any
-  ) => void;
-}
-
-module.exports = (server: RadarPlugin): Plugin => {
-  // ** default configuration settings
+module.exports = (server: ServerAPI): Plugin => {
   let settings: SETTINGS = {
     radar: {
       enable: false,
@@ -103,25 +59,17 @@ module.exports = (server: RadarPlugin): Plugin => {
     }
   };
 
-  // ******** REQUIRED PLUGIN DEFINITION *******
   const plugin: Plugin = {
     id: 'radar-sk',
     name: 'Radar',
     schema: () => CONFIG_SCHEMA,
     uiSchema: () => CONFIG_UISCHEMA,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    start: (settings: any) => {
-      doStartup(settings);
-    },
-    stop: () => {
-      doShutdown();
-    },
-    registerWithRouter: (router) => {
-      return initApiEndpoints(router);
-    },
+    start: (settings: any) => doStartup(settings),
+    stop: () => doShutdown(),
+    registerWithRouter: (router) =>  doRegisterEndpoints(router),
     getOpenApi: () => openapi
   };
-  // ************************************
+
 
   const doStartup = (options: SETTINGS) => {
     try {
@@ -136,9 +84,7 @@ module.exports = (server: RadarPlugin): Plugin => {
       let msg = '';
       if (settings.radar.enable) {
         msg = `Started - Providing: radar`;
-        fetchRadarData(settings.radar);
       }
-
       server.setPluginStatus(msg);
     } catch (error: any) {
       const msg = 'Started with errors!';
@@ -149,37 +95,40 @@ module.exports = (server: RadarPlugin): Plugin => {
     }
   };
 
-  const fetchRadarData = async (config: RadarConfig) => {
-    server.debug("Fetching data.");
-    let response = await fetch(`${config.radarServerUrl}/v1/api/radars`)
-    radarData = await response.json()
-  };
-
+  
   const doShutdown = () => {
     server.debug('** shutting down **');
-    radarData = new Map<string, Radar>();
     const msg = 'Stopped';
     server.setPluginStatus(msg);
   };
 
-  const initApiEndpoints = (router: IRouter) => {
+  const doRegisterEndpoints = (router: IRouter) => {
     server.debug(`Initialising endpoints.`);
 
     const radarPath = '/v1/api/radars';
-    router.get(`${radarPath}`, async (req: Request, res: Response) => {
-      server.debug(`${req.method} ${radarPath}`);
-      res.status(200);
-      res.json(radarData);
-    });
-    router.get(`${radarPath}/:id`, async (req: Request, res: Response) => {
-      server.debug(`${req.method} ${radarPath}/:id`);
-      const r =
-        radarData && radarData.get(req.params.id)
-          ? radarData.get(req.params.id)
-          : {};
-      res.status(200);
-      res.json(r);
-    });
+    //Proxy request to radar server
+    router.all(`${radarPath}`, async (req: Request, res: Response) => {      
+      if(settings.radar.enable) {
+        let options:RequestInit = {
+          method:req.method
+        }
+        if ("POST".indexOf(req.method) >=0) {
+          options.body = req.body
+        }
+        let response = await fetch(`${settings.radar.radarServerUrl}${radarPath}`,options)
+        server.debug(`${req.method} ${radarPath}`);
+        res.status(response.status);
+        if(response.status==200) {
+          let json = await response.json();
+          res.json(json);            
+        } else {
+          res.json({});
+        }
+      } else {
+        res.status(404);        
+        res.json({});
+      }
+    });   
     router.get('/settings', (req: Request, res: Response) => {
       res.status(200).json({
         settings: settings

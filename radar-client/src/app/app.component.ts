@@ -97,8 +97,11 @@ export class AppComponent implements OnInit {
     });
 
     this.radarService.Connect("http://localhost:3001").then(() => {
-      let radar = this.radarService.GetRadars()[0];
-      radarLayer.setSource(this.radarService.CreateRadarSource(radar,subject))
+      let radars = this.radarService.GetRadars() 
+      let radar = radars.get(radars.keys().next().value);
+      if(radar) {
+        radarLayer.setSource(this.radarService.CreateRadarSource(radar,subject))
+      }
     })
   }
 }

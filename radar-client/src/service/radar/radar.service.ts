@@ -19,15 +19,15 @@ export class RadarService {
   constructor(private http: HttpClient) { }
 
   private radarServerUrl?: string;
-  private radars: Radar[] = []
+  private radars: Map<string,Radar> = new Map<string,Radar>();
 
 
   public async Connect(radarServerUrl: string) {
     this.radarServerUrl = radarServerUrl;
-    this.radars = await firstValueFrom(this.http.get<Radar[]>(`${this.radarServerUrl}/radar/v1/radars`))
+    this.radars = await firstValueFrom(this.http.get<Map<string,Radar>>(`${this.radarServerUrl}/v1/api/radars`))
   }
 
-  public GetRadars(): Radar[] {
+  public GetRadars(): Map<string,Radar> {
     return this.radars;
   }
 
