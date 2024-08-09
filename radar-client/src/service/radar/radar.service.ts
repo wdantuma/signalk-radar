@@ -8,7 +8,7 @@ import { createLoader } from 'ol/source/static'
 import { Coordinate } from 'ol/coordinate';
 import { Radar } from './radar.model';
 import { ShipState } from './ship-state.model '
-import { firstValueFrom, Observable } from 'rxjs'
+import { firstValueFrom, Observable,map } from 'rxjs'
 import {createEmpty} from 'ol/extent'
 
 @Injectable({
@@ -24,7 +24,7 @@ export class RadarService {
 
   public async Connect(radarServerUrl: string) {
     this.radarServerUrl = radarServerUrl;
-    this.radars = await firstValueFrom(this.http.get<Map<string,Radar>>(`${this.radarServerUrl}/v1/api/radars`))
+    this.radars = await firstValueFrom(this.http.get(`${this.radarServerUrl}/v1/api/radars`).pipe(map((re) => new Map<string,Radar>(Object.entries(re)))));
   }
 
   public GetRadars(): Map<string,Radar> {

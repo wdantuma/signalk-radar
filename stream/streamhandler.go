@@ -3,7 +3,6 @@ package stream
 import (
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -24,8 +23,8 @@ func NewStreamHandler(s state.ServerState) *streamHandler {
 
 // serveWs handles websocket requests from the peer.
 func (s *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	radarId, err := strconv.Atoi(mux.Vars(r)["radarId"])
-	if err != nil {
+	radarId, ok := mux.Vars(r)["radarId"]
+	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
