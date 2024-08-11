@@ -176,11 +176,11 @@ addEventListener('message', (event) => {
       }
 
       socket.onopen = (event) => {
-        console.log(`Radar ${radar.label} connected`)
+        console.log(`Radar ${radar.name} connected`)
       }
   
       socket.onclose = (event) => {
-        console.log(`Radar ${radar.label} disconnected retry in 3 seconds`);
+        console.log(`Radar ${radar.name} disconnected retry in 3 seconds`);
         ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
         postMessage({ redraw: true })
         setTimeout(function() {
@@ -191,7 +191,7 @@ addEventListener('message', (event) => {
       socket.onerror = (event) => {
         ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
         postMessage({ redraw: true })
-        console.error(`Error on radar ${radar.label} stopping`)
+        console.error(`Error on radar ${radar.name} stopping`)
       }
     }
     connect();

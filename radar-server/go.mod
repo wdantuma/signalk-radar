@@ -1,4 +1,4 @@
-module github.com/wdantuma/signalk-radar/radar-server/radar-server
+module github.com/wdantuma/signalk-radar/radar-server
 
 go 1.20
 

@@ -21,19 +21,56 @@
         ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique ID of the radar"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Name of the radar"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the radar"
           },
           "spokes": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Number of spokes (scanlines) in one rotation of the radar"
           },
           "maxSpokeLen": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Number of \"measurements\" in one spoke"
           },
           "streamUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "Websocket stream of this radar"
+          },
+          "supportedRanges": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Supported ranges of this radar in KM"
+          },
+          "range": {
+            "type": "integer",
+            "description": "Current selected range"
+          },
+          "supportedRPM": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Supported RPM'S of this radar in revolutions/min"
+          },
+          "rpm": {
+            "type": "integer",
+            "description": "Current selected rpm"
+          },
+          "gain": {
+            "type": "number",
+            "description": "Current selected gain factor 0 to 1 ( 0 to 100%)",
+            "minimum": 0,
+            "maximum": 1
           }
         }
       }
@@ -56,10 +93,22 @@
                   "example": {
                     "radar-0": {
                       "id": "radar-0",
-                      "name": "Radar type",
-                      "spokes": 0,
-                      "maxSpokeLen": 0,
-                      "streamUrl": "http://localhost:3001/api/v1/stream/radar-0"
+                      "name": "Garmin XHD",
+                      "description":"Garmin radar on radar pole",
+                      "spokes": 1440,
+                      "maxSpokeLen": 705,
+                      "streamUrl": "http://localhost:3001/api/v1/stream/radar-0",
+                      "supportedRanges": [
+                        3710,
+                        88896
+                      ],
+                      "range": 3710,
+                      "supportedRPM": [
+                        24,
+                        48
+                      ],
+                      "rpm": 24,
+                      "gain": 0.8
                     }
                   }
                 }
