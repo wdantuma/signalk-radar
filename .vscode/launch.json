@@ -10,8 +10,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceRoot}/cmd/signalk-radar",
-            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../samples/garmin_xhd.pcap","--type","garminxhd" ]
+            "program": "${workspaceRoot}/radar-server/cmd/signalk-radar",
+            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../../samples/garmin_xhd.pcap","--type","garminxhd" ]
         }
     ]
 }
