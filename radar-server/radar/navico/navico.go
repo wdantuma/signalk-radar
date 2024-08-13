@@ -35,6 +35,38 @@ const (
 	TYPE_HALOB
 )
 
+type LookupSpoke int
+
+const (
+	LOOKUP_SPOKE_LOW_NORMAL LookupSpoke = iota
+	LOOKUP_SPOKE_LOW_BOTH
+	LOOKUP_SPOKE_LOW_APPROACHING
+	LOOKUP_SPOKE_HIGH_NORMAL
+	LOOKUP_SPOKE_HIGH_BOTH
+	LOOKUP_SPOKE_HIGH_APPROACHING
+)
+
+var lookupData []uint8 = make([]uint8, 6*256)
+
+var lookupNibbleToByte = [...]uint8{
+	0,    // 0
+	0x32, // 1
+	0x40, // 2
+	0x4e, // 3
+	0x5c, // 4
+	0x6a, // 5
+	0x78, // 6
+	0x86, // 7
+	0x94, // 8
+	0xa2, // 9
+	0xb0, // a
+	0xbe, // b
+	0xcc, // c
+	0xda, // d
+	0xe8, // e
+	0xf4, // f
+}
+
 type navico struct {
 	label              string
 	radarType          RadarType
@@ -123,8 +155,57 @@ type Br4g_header struct {
 	U03         [4]uint8 // 4 bytes signed integer, mostly -1 (0x80 in last byte) or 0xa0 in last byte
 }
 
+func lookupIndex(t LookupSpoke, i int) int {
+	return int(t)*256 + int(i)
+}
+
+func InitializeLookupData() {
+	if lookupData[lookupIndex(5, 255)] == 0 {
+		for j := 0; j <= 255; j++ {
+			low := lookupNibbleToByte[(j & 0x0f)]
+			high := lookupNibbleToByte[(j&0xf0)>>4]
+
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL, j)] = low
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL, j)] = high
+
+			switch low {
+			case 0xf4:
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xff
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = 0xff
+				break
+
+			case 0xe8:
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xfe
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
+				break
+
+			default:
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = low
+				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
+			}
+
+			switch high {
+			case 0xf4:
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xff
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = 0xff
+				break
+
+			case 0xe8:
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xfe
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
+				break
+
+			default:
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = high
+				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
+			}
+		}
+	}
+}
+
 func NewNavico(frameSourceFactory source.FrameSourceFactory) *navico {
 
+	InitializeLookupData()
 	locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(0, 0, 0, 0, 0))
 	navico := &navico{radarType: TYPE_UNKOWN, label: "Navico", farmeSourceFactory: frameSourceFactory, locatorSource: locatorSource, source: make(chan *radar.RadarMessage), reportSource: nil, dataSource: nil}
 	navico.start()
@@ -321,12 +402,20 @@ func (g *navico) processData(dataBytes []byte) {
 
 		binary.Read(dataReader, binary.BigEndian, &data)
 
+		var data_highres []uint8 = make([]uint8, NAVICO_MAX_SPOKE_LEN)
+
+		doppler := 1
+		for i := 0; i < NAVICO_MAX_SPOKE_LEN/2; i++ {
+			data_highres[2*i] = lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL+LookupSpoke(doppler), int(data[i]))]
+			data_highres[2*i+1] = lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL+LookupSpoke(doppler), int(data[i]))]
+		}
+
 		message := radar.RadarMessage{
 			Spoke: &radar.RadarMessage_Spoke{
 				Angle:   uint32(br4g.Angle),
 				Bearing: 0,
 				Range:   uint32(range_meters),
-				Data:    []byte(data),
+				Data:    data_highres,
 				Time:    uint64(time.Now().UnixMilli()),
 			},
 		}
