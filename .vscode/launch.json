@@ -6,7 +6,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch signalk-radar",
+            "name": "Launch signalk-radar navico",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/radar-server/cmd/signalk-radar",
+            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../../samples/navico_and_0183.pcap","--type","navico" ]
+        },
+        {
+            "name": "Launch signalk-radar garmin",
             "type": "go",
             "request": "launch",
             "mode": "auto",

@@ -38,8 +38,9 @@ type RadarLine struct {
 	//line_data        [GARMIN_XHD_MAX_SPOKE_LEN]uint8
 }
 
-func NewGarminXhd(reportSource source.FrameSource, dataSource source.FrameSource) *garminxhd {
-
+func NewGarminXhd(frameSourceFactory source.FrameSourceFactory) *garminxhd {
+	reportSource := frameSourceFactory.CreateFrameSource("garminReport", source.NewAddress(0, 0, 0, 0, 50100))
+	dataSource := frameSourceFactory.CreateFrameSource("garminData", source.NewAddress(0, 0, 0, 0, 50102))
 	garminxhd := &garminxhd{label: "GarminXHD", reportSource: reportSource, dataSource: dataSource, source: make(chan *radar.RadarMessage)}
 	garminxhd.start()
 

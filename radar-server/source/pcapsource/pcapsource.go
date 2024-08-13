@@ -3,19 +3,22 @@ package pcapsource
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/google/gopacket"
+	"github.com/google/gopacket/ip4defrag"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/wdantuma/signalk-radar/radar-server/source"
 )
 
 type pcapFrameSource struct {
-	label  string
-	port   int
-	source chan []byte
+	label   string
+	address source.Address
+	source  chan []byte
 }
 
 func (fs *pcapFrameSource) Label() string {
@@ -26,25 +29,34 @@ func (fs *pcapFrameSource) Source() chan []byte {
 	return fs.source
 }
 
+func (fs *pcapFrameSource) Address() source.Address {
+	return fs.address
+}
+
 type pcapSource struct {
 	running bool
 	loop    bool
 	file    string
-	sources []pcapFrameSource
+	sources []source.FrameSource
 }
 
 func NewPcapSource(file string, loop bool) (*pcapSource, error) {
 	if _, err := os.Stat(file); err == nil {
-		return &pcapSource{file: file, sources: make([]pcapFrameSource, 0), loop: loop}, nil
+		return &pcapSource{file: file, sources: make([]source.FrameSource, 0), loop: loop}, nil
 	} else {
 		return nil, errors.New(fmt.Sprintf("Pcap file %s not found\n", file))
 	}
 }
 
-func (p *pcapSource) CreateFrameSource(label string, port int) source.FrameSource {
-	entry := pcapFrameSource{port: port, label: label, source: make(chan []byte)}
+func (p *pcapSource) CreateFrameSource(label string, address source.Address) source.FrameSource {
+	entry := &pcapFrameSource{address: address, label: label, source: make(chan []byte, 10)}
 	p.sources = append(p.sources, entry)
-	return &entry
+	return entry
+}
+
+func (p *pcapSource) RemoveFrameSource(source source.FrameSource) {
+	index := slices.Index(p.sources, source)
+	p.sources = append(p.sources[:index], p.sources[index+1:]...)
 }
 
 func (p *pcapSource) Start() {
@@ -65,9 +77,34 @@ func (p *pcapSource) processFile() {
 	if handle, err := pcap.OpenOffline(p.file); err != nil {
 		panic(err)
 	} else {
+		n := 0
 		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+		defragger := ip4defrag.NewIPv4Defragmenter()
 		var prevTimestamp time.Time = time.Time{}
+		var startTimestamp = time.Now()
 		for packet := range packetSource.Packets() {
+			n++
+			ip4Layer := packet.Layer(layers.LayerTypeIPv4)
+			if ip4Layer == nil {
+				continue
+			}
+			ip4 := ip4Layer.(*layers.IPv4)
+			l := ip4.Length
+
+			newip4, err := defragger.DefragIPv4(ip4)
+			if err != nil {
+				log.Fatalln("Error while de-fragmenting", err)
+			} else if newip4 == nil {
+				continue // packet fragment, we don't have whole packet yet.
+			}
+			if newip4.Length != l {
+				pb, ok := packet.(gopacket.PacketBuilder)
+				if !ok {
+					panic("Not a PacketBuilder")
+				}
+				nextDecoder := newip4.NextLayerType()
+				nextDecoder.Decode(newip4.Payload, pb)
+			}
 			if !prevTimestamp.Equal(time.Time{}) {
 				duration := packet.Metadata().Timestamp.Sub(prevTimestamp)
 				time.Sleep(duration)
@@ -78,6 +115,8 @@ func (p *pcapSource) processFile() {
 			}
 			p.handlePacket(packet)
 		}
+		totalDuration := time.Since(startTimestamp)
+		fmt.Printf("Processed :%d packets in %s\n", n, totalDuration)
 	}
 }
 
@@ -85,20 +124,24 @@ func (p *pcapSource) Stop() {
 	if p.running {
 		p.running = false
 		for _, e := range p.sources {
-			close(e.source)
+			close(e.Source())
 		}
 	}
 }
 
 func (p *pcapSource) handlePacket(packet gopacket.Packet) {
+
 	ipLayer := packet.Layer(layers.LayerTypeIPv4)
 	udpLayer := packet.Layer(layers.LayerTypeUDP)
+
 	if ipLayer != nil && udpLayer != nil {
-		dtPort := udpLayer.(*layers.UDP).DstPort
+		dstPort := udpLayer.(*layers.UDP).DstPort
+		dstIpAddr := ipLayer.(*layers.IPv4).DstIP
+		dstAddr := source.NewAddress(dstIpAddr[0], dstIpAddr[1], dstIpAddr[2], dstIpAddr[3], uint16(dstPort))
 
 		for _, e := range p.sources {
-			if e.port == int(dtPort) {
-				e.source <- udpLayer.LayerPayload()
+			if e.Address().IsMatch(dstAddr) {
+				e.Source() <- udpLayer.LayerPayload()
 			}
 		}
 	}

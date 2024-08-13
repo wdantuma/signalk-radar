@@ -12,12 +12,9 @@ func TestGarmin(t *testing.T) {
 
 	var garmin radar.RadarSource
 
-	source, _ := pcapsource.NewPcapSource("../../samples/garmin_xhd.pcap", false)
+	source, _ := pcapsource.NewPcapSource("../../../samples/garmin_xhd.pcap", false)
 
-	reportFarmeSource := source.CreateFrameSource("garminReport", 50100)
-	dataFrameSource := source.CreateFrameSource("garminData", 50102)
-
-	garmin = NewGarminXhd(reportFarmeSource, dataFrameSource)
+	garmin = NewGarminXhd(source)
 
 	source.Start()
 

@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wdantuma/signalk-radar/radar-server/radar"
 	"github.com/wdantuma/signalk-radar/radar-server/radar/garminxhd"
+	"github.com/wdantuma/signalk-radar/radar-server/radar/navico"
 	"github.com/wdantuma/signalk-radar/radar-server/radarserver"
 	"github.com/wdantuma/signalk-radar/radar-server/source/pcapsource"
 )
@@ -110,9 +111,9 @@ func main() {
 			var radar radar.RadarSource
 			switch radars[index] {
 			case "garminxhd":
-				reportFarmeSource := source.CreateFrameSource("garminReport", 50100)
-				dataFrameSource := source.CreateFrameSource("garminData", 50102)
-				radar = garminxhd.NewGarminXhd(reportFarmeSource, dataFrameSource)
+				radar = garminxhd.NewGarminXhd(source)
+			case "navico":
+				radar = navico.NewNavico(source)
 			default:
 				fmt.Printf("Radar type %s not supported\n", radars[index])
 				return
