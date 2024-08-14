@@ -46,15 +46,26 @@ func (h *hub) run() {
 					close(client.send)
 				}
 			case message := <-h.Broadcast:
-				bytes, err := proto.Marshal(message)
-				if err == nil && len(bytes) > 0 {
-					for client := range h.clients {
-						select {
-						case client.send <- bytes:
-						default:
-							fmt.Println("Send error")
-							delete(h.clients, client)
-							close(client.send)
+				// only send spokes with data
+				var n int
+				for n = len(message.Spoke.Data) - 1; n >= 0; n-- {
+					if message.Spoke.Data[n] != 0 {
+						break
+					}
+				}
+
+				if n > 0 { // do only send spokes with data
+					message.Spoke.Data = message.Spoke.Data[:n]
+					bytes, err := proto.Marshal(message)
+					if err == nil && len(bytes) > 0 {
+						for client := range h.clients {
+							select {
+							case client.send <- bytes:
+							default:
+								fmt.Println("Send error")
+								delete(h.clients, client)
+								close(client.send)
+							}
 						}
 					}
 				}
