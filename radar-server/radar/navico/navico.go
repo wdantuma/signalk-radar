@@ -417,7 +417,7 @@ func (g *navico) processData(dataBytes []byte) {
 			data_highres[2*i+1] = lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL+LookupSpoke(doppler), int(data[i]))]
 		}
 
-		range_meters = int(float32(range_meters) * 1.66) // strange factor needed to display correctly on map
+		range_meters = int(float32(range_meters) * (1 + (2.0 / 3.0))) // strange factor needed to display correctly on map
 
 		message := radar.RadarMessage{
 			Spoke: &radar.RadarMessage_Spoke{

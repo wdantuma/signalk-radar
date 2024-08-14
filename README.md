@@ -1,10 +1,10 @@
 # Signal K radar
 
-[WIP]
+[Work in progress]
 
 Beginning of a radar server as companion to Signal K and Freeboard-SK
 
-[![Video](https://img.youtube.com/vi/5oTSLtVAKFs/0.jpg)](https://www.youtube.com/watch?v=5oTSLtVAKFs)
+![Screenshot](./doc/img/screenshot-1.png)
 
 # Code
 This repository contains 3 projects
