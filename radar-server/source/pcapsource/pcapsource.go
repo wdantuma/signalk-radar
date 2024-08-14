@@ -136,6 +136,12 @@ func (p *pcapSource) handlePacket(packet gopacket.Packet) {
 
 	if ipLayer != nil && udpLayer != nil {
 		dstPort := udpLayer.(*layers.UDP).DstPort
+		// if dstPort == 10110 {
+		// 	nmea := string(udpLayer.LayerPayload())
+		// 	if strings.Index(nmea, "HDT") >= 0 {
+		// 		fmt.Println(nmea)
+		// 	}
+		// }
 		dstIpAddr := ipLayer.(*layers.IPv4).DstIP
 		dstAddr := source.NewAddress(dstIpAddr[0], dstIpAddr[1], dstIpAddr[2], dstIpAddr[3], uint16(dstPort))
 
