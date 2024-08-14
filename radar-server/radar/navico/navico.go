@@ -12,7 +12,7 @@ import (
 )
 
 const NAVICO_MAX_SPOKE_LEN = 1024
-const NAVICO_SPOKES = 4096
+const NAVICO_SPOKES = 2048
 
 type RadarReportType uint8
 
@@ -172,29 +172,20 @@ func InitializeLookupData() {
 			case 0xf4:
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xff
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = 0xff
-				break
-
 			case 0xe8:
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xfe
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
-				break
-
 			default:
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = low
 				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
 			}
-
 			switch high {
 			case 0xf4:
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xff
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = 0xff
-				break
-
 			case 0xe8:
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xfe
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
-				break
-
 			default:
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = high
 				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
@@ -350,6 +341,10 @@ func (g *navico) processReport(reportBytes []byte) {
 
 }
 
+func modSpokes(angle uint32) uint32 {
+	return angle + (2*NAVICO_SPOKES)%NAVICO_SPOKES
+}
+
 func (g *navico) processData(dataBytes []byte) {
 
 	if len(dataBytes) < 9 {
@@ -382,37 +377,51 @@ func (g *navico) processData(dataBytes []byte) {
 			return
 		}
 
-		var range_meters uint16
+		var range_meters int
 		//var heading_raw uint16
 
 		switch g.radarType {
-		case TYPE_HALOA:
+		case TYPE_3G, TYPE_4GA, TYPE_4GB:
 			_ = binary.Read(dataReader, binary.LittleEndian, &br4g)
 			//heading_raw = br4g.Heading
 			if br4g.Largerange == 0x80 {
 				if br4g.Smallrange == 0xffff {
 					range_meters = 0
 				} else {
-					range_meters = br4g.Smallrange / 4
+					range_meters = int(br4g.Smallrange) / 4
 				}
 			} else {
-				range_meters = br4g.Largerange * (br4g.Smallrange / 512)
+				range_meters = int(br4g.Largerange) * 64
+			}
+		case TYPE_HALOA, TYPE_HALOB:
+			_ = binary.Read(dataReader, binary.LittleEndian, &br4g)
+			//heading_raw = br4g.Heading
+			if br4g.Largerange == 0x80 {
+				if br4g.Smallrange == 0xffff {
+					range_meters = 0
+				} else {
+					range_meters = int(br4g.Smallrange) / 4
+				}
+			} else {
+				range_meters = int(br4g.Largerange) * (int(br4g.Smallrange) / 512)
 			}
 		}
 
-		binary.Read(dataReader, binary.BigEndian, &data)
+		binary.Read(dataReader, binary.LittleEndian, &data)
 
 		var data_highres []uint8 = make([]uint8, NAVICO_MAX_SPOKE_LEN)
 
-		doppler := 1
+		doppler := 0 //TODO set this
 		for i := 0; i < NAVICO_MAX_SPOKE_LEN/2; i++ {
 			data_highres[2*i] = lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL+LookupSpoke(doppler), int(data[i]))]
 			data_highres[2*i+1] = lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL+LookupSpoke(doppler), int(data[i]))]
 		}
 
+		range_meters = int(float32(range_meters) * 1.66) // strange factor needed to display correctly on map
+
 		message := radar.RadarMessage{
 			Spoke: &radar.RadarMessage_Spoke{
-				Angle:   uint32(br4g.Angle),
+				Angle:   uint32(modSpokes(uint32(br4g.Angle / 2))),
 				Bearing: 0,
 				Range:   uint32(range_meters),
 				Data:    data_highres,
