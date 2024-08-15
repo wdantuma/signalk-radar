@@ -8,16 +8,16 @@ export class RadarMessage extends pb_1.Message {
     #one_of_decls: number[][] = [];
     constructor(data?: any[] | {
         radar?: number;
-        spoke?: RadarMessage.Spoke;
+        spokes?: RadarMessage.Spoke[];
     }) {
         super();
-        pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
+        pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2], this.#one_of_decls);
         if (!Array.isArray(data) && typeof data == "object") {
             if ("radar" in data && data.radar != undefined) {
                 this.radar = data.radar;
             }
-            if ("spoke" in data && data.spoke != undefined) {
-                this.spoke = data.spoke;
+            if ("spokes" in data && data.spokes != undefined) {
+                this.spokes = data.spokes;
             }
         }
     }
@@ -27,38 +27,35 @@ export class RadarMessage extends pb_1.Message {
     set radar(value: number) {
         pb_1.Message.setField(this, 1, value);
     }
-    get spoke() {
-        return pb_1.Message.getWrapperField(this, RadarMessage.Spoke, 2) as RadarMessage.Spoke;
+    get spokes() {
+        return pb_1.Message.getRepeatedWrapperField(this, RadarMessage.Spoke, 2) as RadarMessage.Spoke[];
     }
-    set spoke(value: RadarMessage.Spoke) {
-        pb_1.Message.setWrapperField(this, 2, value);
-    }
-    get has_spoke() {
-        return pb_1.Message.getField(this, 2) != null;
+    set spokes(value: RadarMessage.Spoke[]) {
+        pb_1.Message.setRepeatedWrapperField(this, 2, value);
     }
     static fromObject(data: {
         radar?: number;
-        spoke?: ReturnType<typeof RadarMessage.Spoke.prototype.toObject>;
+        spokes?: ReturnType<typeof RadarMessage.Spoke.prototype.toObject>[];
     }): RadarMessage {
         const message = new RadarMessage({});
         if (data.radar != null) {
             message.radar = data.radar;
         }
-        if (data.spoke != null) {
-            message.spoke = RadarMessage.Spoke.fromObject(data.spoke);
+        if (data.spokes != null) {
+            message.spokes = data.spokes.map(item => RadarMessage.Spoke.fromObject(item));
         }
         return message;
     }
     toObject() {
         const data: {
             radar?: number;
-            spoke?: ReturnType<typeof RadarMessage.Spoke.prototype.toObject>;
+            spokes?: ReturnType<typeof RadarMessage.Spoke.prototype.toObject>[];
         } = {};
         if (this.radar != null) {
             data.radar = this.radar;
         }
-        if (this.spoke != null) {
-            data.spoke = this.spoke.toObject();
+        if (this.spokes != null) {
+            data.spokes = this.spokes.map((item: RadarMessage.Spoke) => item.toObject());
         }
         return data;
     }
@@ -68,8 +65,8 @@ export class RadarMessage extends pb_1.Message {
         const writer = w || new pb_1.BinaryWriter();
         if (this.radar != 0)
             writer.writeUint32(1, this.radar);
-        if (this.has_spoke)
-            writer.writeMessage(2, this.spoke, () => this.spoke.serialize(writer));
+        if (this.spokes.length)
+            writer.writeRepeatedMessage(2, this.spokes, (item: RadarMessage.Spoke) => item.serialize(writer));
         if (!w)
             return writer.getResultBuffer();
     }
@@ -83,7 +80,7 @@ export class RadarMessage extends pb_1.Message {
                     message.radar = reader.readUint32();
                     break;
                 case 2:
-                    reader.readMessage(message.spoke, () => message.spoke = RadarMessage.Spoke.deserialize(reader));
+                    reader.readMessage(message.spokes, () => pb_1.Message.addToRepeatedWrapperField(message, 2, RadarMessage.Spoke.deserialize(reader), RadarMessage.Spoke));
                     break;
                 default: reader.skipField();
             }

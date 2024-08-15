@@ -46,15 +46,20 @@ func (h *hub) run() {
 					close(client.send)
 				}
 			case message := <-h.Broadcast:
+				if len(h.clients) == 0 {
+					break // do nothing if no one is listening
+				}
 				// only send spokes with data
 				for _, s := range message.Spokes {
-					var n int
-					for n = len(s.Data) - 1; n >= 0; n-- {
-						if s.Data[n] != 0 {
-							break
+					if len(s.Data) > 0 {
+						var n int
+						for n = len(s.Data) - 1; n > 0; n-- {
+							if s.Data[n] != 0 {
+								break
+							}
 						}
+						s.Data = s.Data[:n]
 					}
-					s.Data = s.Data[:n]
 				}
 
 				bytes, err := proto.Marshal(message)

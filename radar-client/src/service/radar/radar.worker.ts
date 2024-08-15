@@ -123,56 +123,62 @@ addEventListener('message', (event) => {
   
       socket.onmessage = (event) => {
         let message = RadarMessage.deserialize(event.data)
-        if (lastRange != message.spoke.range) {
-          lastRange = message.spoke.range
-          postMessage({ range: message.spoke.range })
-        }
-  
-        let angle = message.spoke.angle
-        let h = Heading-90
-        if (h<0) {
-          h+=360
-        }
-        angle += Math.round((h) / (360 / radar.spokes)) // add heading
-        angle = angle % radar.spokes
-  
-        // 2D context based draw implementation maybe to webgl context
-        if (Date.now() - message.spoke.time < 1000) { // drop old spokes
-          // clear spoke in front
-          let clearangle1 = angle + 1 % radar.spokes
-          let clearangle2 = angle + 4 % radar.spokes
-          ctxWorker.moveTo
-          ctxWorker.save()
-          ctxWorker.beginPath()
-          ctxWorker.strokeStyle = "#00000000"
-          ctxWorker.moveTo(x[clearangle1 * radar.maxSpokeLen + 0], y[clearangle1 * radar.maxSpokeLen + 0])
-          ctxWorker.lineTo(x[clearangle1 * radar.maxSpokeLen + radar.maxSpokeLen - 1], y[clearangle1 * radar.maxSpokeLen + radar.maxSpokeLen - 1])
-          ctxWorker.lineTo(x[clearangle2 * radar.maxSpokeLen + radar.maxSpokeLen - 1], y[clearangle2 * radar.maxSpokeLen + radar.maxSpokeLen - 1])
-          ctxWorker.closePath()
-          ctxWorker.stroke()
-          ctxWorker.clip()
-          ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
-          ctxWorker.restore()
-  
-          // draw current spoke
-          for (let i = 0; i < message.spoke.data.length; i++) {
-            let ci = m_colour_map.get(message.spoke.data[i])
-            if (ci != BlobColour.BLOB_NONE) {
-              let color = m_colour_map_rgb.get(ci as BlobColour)
-              if (color) {
-                let x1 = x[angle * radar.maxSpokeLen + i]
-                let y1 = y[angle * radar.maxSpokeLen + i]
-                pixelData[0] = color[0]
-                pixelData[1] = color[1]
-                pixelData[2] = color[2]
-                pixelData[3] = color[3] * 255
-                ctxWorker.putImageData(pixel, x1, y1)
+
+        for(let si=0;si<message.spokes.length;si++) {
+           let spoke = message.spokes[si]
+
+           if (lastRange != spoke.range) {
+            lastRange = spoke.range
+            postMessage({ range: spoke.range })
+          }
+    
+          let angle = spoke.angle
+          let h = Heading-90
+          if (h<0) {
+            h+=360
+          }
+          angle += Math.round((h) / (360 / radar.spokes)) // add heading
+          angle = angle % radar.spokes
+    
+          // 2D context based draw implementation maybe to webgl context
+          if (Date.now() - spoke.time < 1000) { // drop old spokes
+            // clear spoke in front
+            let clearangle1 = angle + 1 % radar.spokes
+            let clearangle2 = angle + 4 % radar.spokes
+            ctxWorker.moveTo
+            ctxWorker.save()
+            ctxWorker.beginPath()
+            ctxWorker.strokeStyle = "#00000000"
+            ctxWorker.moveTo(x[clearangle1 * radar.maxSpokeLen + 0], y[clearangle1 * radar.maxSpokeLen + 0])
+            ctxWorker.lineTo(x[clearangle1 * radar.maxSpokeLen + radar.maxSpokeLen - 1], y[clearangle1 * radar.maxSpokeLen + radar.maxSpokeLen - 1])
+            ctxWorker.lineTo(x[clearangle2 * radar.maxSpokeLen + radar.maxSpokeLen - 1], y[clearangle2 * radar.maxSpokeLen + radar.maxSpokeLen - 1])
+            ctxWorker.closePath()
+            ctxWorker.stroke()
+            ctxWorker.clip()
+            ctxWorker.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+            ctxWorker.restore()
+    
+            // draw current spoke
+            for (let i = 0; i < spoke.data.length; i++) {
+              let ci = m_colour_map.get(spoke.data[i])
+              if (ci != BlobColour.BLOB_NONE) {
+                let color = m_colour_map_rgb.get(ci as BlobColour)
+                if (color) {
+                  let x1 = x[angle * radar.maxSpokeLen + i]
+                  let y1 = y[angle * radar.maxSpokeLen + i]
+                  pixelData[0] = color[0]
+                  pixelData[1] = color[1]
+                  pixelData[2] = color[2]
+                  pixelData[3] = color[3] * 255
+                  ctxWorker.putImageData(pixel, x1, y1)
+                }
               }
             }
+            postMessage({ redraw: true })
+    
           }
-          postMessage({ redraw: true })
-  
-        }
+           
+        }       
       }
 
       socket.onopen = (event) => {
