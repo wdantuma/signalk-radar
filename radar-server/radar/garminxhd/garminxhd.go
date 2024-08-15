@@ -109,13 +109,14 @@ func (g *garminxhd) processData(dataBytes []byte) {
 		err = binary.Read(dataReader, binary.LittleEndian, data)
 		if err == nil {
 			message := radar.RadarMessage{
-				Spoke: &radar.RadarMessage_Spoke{
-					Angle:   uint32(line.Angle / 8),
-					Bearing: 0,
-					Range:   uint32(line.RangeMeters),
-					Data:    data,
-					Time:    uint64(time.Now().UnixMilli()),
-				},
+				Spokes: make([]*radar.RadarMessage_Spoke, 1),
+			}
+			message.Spokes[0] = &radar.RadarMessage_Spoke{
+				Angle:   uint32(line.Angle / 8),
+				Bearing: 0,
+				Range:   uint32(line.RangeMeters),
+				Data:    data,
+				Time:    uint64(time.Now().UnixMilli()),
 			}
 			g.source <- &message
 		}

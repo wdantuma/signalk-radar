@@ -361,6 +361,9 @@ func (g *navico) processData(dataBytes []byte) {
 	if spokes != 32 {
 	}
 
+	message := radar.RadarMessage{
+		Spokes: make([]*radar.RadarMessage_Spoke, spokes),
+	}
 	for scanline := 0; scanline < spokes; scanline++ {
 
 		var common Common_header
@@ -419,15 +422,13 @@ func (g *navico) processData(dataBytes []byte) {
 
 		range_meters = int(float32(range_meters) * (1 + (2.0 / 3.0))) // strange factor needed to display correctly on map
 
-		message := radar.RadarMessage{
-			Spoke: &radar.RadarMessage_Spoke{
-				Angle:   uint32(modSpokes(uint32(br4g.Angle / 2))),
-				Bearing: 0,
-				Range:   uint32(range_meters),
-				Data:    data_highres,
-				Time:    uint64(time.Now().UnixMilli()),
-			},
+		message.Spokes[scanline] = &radar.RadarMessage_Spoke{
+			Angle:   uint32(modSpokes(uint32(br4g.Angle / 2))),
+			Bearing: 0,
+			Range:   uint32(range_meters),
+			Data:    data_highres,
+			Time:    uint64(time.Now().UnixMilli()),
 		}
-		g.source <- &message
 	}
+	g.source <- &message
 }

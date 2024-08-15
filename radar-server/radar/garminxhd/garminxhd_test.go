@@ -19,6 +19,8 @@ func TestGarmin(t *testing.T) {
 	source.Start()
 
 	for m := range garmin.Source() {
-		fmt.Printf("%d\n", m.Spoke.Angle)
+		for _, s := range m.Spokes {
+			fmt.Printf("Angle %d\n", s.Angle)
+		}
 	}
 }

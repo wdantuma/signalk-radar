@@ -10,5 +10,5 @@ message RadarMessage {
         uint64 time = 4;
         bytes data = 5;        
     }
-    Spoke spoke = 2;
+    repeated Spoke spokes = 2;
 }
