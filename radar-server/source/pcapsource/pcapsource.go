@@ -33,6 +33,14 @@ func (fs *pcapFrameSource) Address() source.Address {
 	return fs.address
 }
 
+func (fs *pcapFrameSource) Start() {
+
+}
+
+func (fs *pcapFrameSource) Stop() {
+	close(fs.source)
+}
+
 type pcapSource struct {
 	running bool
 	loop    bool
@@ -49,6 +57,11 @@ func NewPcapSource(file string, loop bool) (*pcapSource, error) {
 }
 
 func (p *pcapSource) CreateFrameSource(label string, address source.Address) source.FrameSource {
+	for _, s := range p.sources {
+		if s.Label() == label && s.Address().String() == address.String() {
+			return nil // reuse existing
+		}
+	}
 	entry := &pcapFrameSource{address: address, label: label, source: make(chan []byte, 10)}
 	p.sources = append(p.sources, entry)
 	return entry
@@ -124,7 +137,7 @@ func (p *pcapSource) Stop() {
 	if p.running {
 		p.running = false
 		for _, e := range p.sources {
-			close(e.Source())
+			e.Stop()
 		}
 	}
 }
@@ -136,15 +149,8 @@ func (p *pcapSource) handlePacket(packet gopacket.Packet) {
 
 	if ipLayer != nil && udpLayer != nil {
 		dstPort := udpLayer.(*layers.UDP).DstPort
-		// if dstPort == 10110 {
-		// 	nmea := string(udpLayer.LayerPayload())
-		// 	if strings.Index(nmea, "HDT") >= 0 {
-		// 		fmt.Println(nmea)
-		// 	}
-		// }
 		dstIpAddr := ipLayer.(*layers.IPv4).DstIP
 		dstAddr := source.NewAddress(dstIpAddr[0], dstIpAddr[1], dstIpAddr[2], dstIpAddr[3], uint16(dstPort))
-
 		for _, e := range p.sources {
 			if e.Address().IsMatch(dstAddr) {
 				e.Source() <- udpLayer.LayerPayload()

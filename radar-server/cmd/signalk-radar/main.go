@@ -104,6 +104,7 @@ func main() {
 	if len(fileSources) > 0 {
 		for index, fs := range fileSources {
 			source, err := pcapsource.NewPcapSource(fs, true)
+			//source, err := udpsource.NewUdpSource()
 			if err != nil {
 				fmt.Printf("%s\n", err)
 				return

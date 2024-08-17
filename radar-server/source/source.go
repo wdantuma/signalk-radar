@@ -11,4 +11,6 @@ type FrameSource interface {
 	Label() string
 	Source() chan []byte
 	Address() Address
+	Start()
+	Stop()
 }

@@ -197,9 +197,11 @@ func InitializeLookupData() {
 func NewNavico(frameSourceFactory source.FrameSourceFactory) *navico {
 
 	InitializeLookupData()
-	locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(0, 0, 0, 0, 0))
+	locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(236, 6, 7, 5, 6878))
+	//locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(0, 0, 0, 0, 6878))
 	navico := &navico{radarType: TYPE_UNKOWN, label: "Navico", farmeSourceFactory: frameSourceFactory, locatorSource: locatorSource, source: make(chan *radar.RadarMessage), reportSource: nil, dataSource: nil}
 	navico.start()
+	locatorSource.Start()
 
 	return navico
 }
@@ -253,14 +255,16 @@ func (g *navico) start() {
 					if newDataSource != nil && newReportSource != nil {
 						if dataSource != nil {
 							g.farmeSourceFactory.RemoveFrameSource(dataSource)
-							close(dataSource.Source())
+							dataSource.Stop()
 						}
 						dataSource = newDataSource
+						newDataSource.Start()
 						if reportSource != nil {
 							g.farmeSourceFactory.RemoveFrameSource(reportSource)
-							close(reportSource.Source())
+							reportSource.Stop()
 						}
 						reportSource = newReportSource
+						newReportSource.Start()
 					}
 				} else {
 					locatorSource = nil
@@ -282,8 +286,8 @@ func (g *navico) processLocator(locatorBytes []byte) (data source.FrameSource, r
 			err := binary.Read(dataReader, binary.BigEndian, &report)
 
 			if err == nil {
-				reportSource := g.farmeSourceFactory.CreateFrameSource("Navico report", source.NewAddress(0, 0, 0, 0, report.AddrReportA.Port))
-				dataSource := g.farmeSourceFactory.CreateFrameSource("Navico data", source.NewAddress(0, 0, 0, 0, report.AddrDataA.Port))
+				reportSource := g.farmeSourceFactory.CreateFrameSource("Navico report", report.AddrReportA)
+				dataSource := g.farmeSourceFactory.CreateFrameSource("Navico data", report.AddrDataA)
 				return dataSource, reportSource
 			}
 		}
@@ -420,7 +424,7 @@ func (g *navico) processData(dataBytes []byte) {
 			data_highres[2*i+1] = lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL+LookupSpoke(doppler), int(data[i]))]
 		}
 
-		range_meters = int(float32(range_meters) * (1 + (2.0 / 3.0))) // strange factor needed to display correctly on map
+		range_meters = int(float32(range_meters) * 1.66) // strange factor needed to display correctly on map
 
 		message.Spokes[scanline] = &radar.RadarMessage_Spoke{
 			Angle:   uint32(modSpokes(uint32(br4g.Angle / 2))),
