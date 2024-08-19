@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -15,7 +16,9 @@ import (
 	"github.com/wdantuma/signalk-radar/radar-server/radar/garminxhd"
 	"github.com/wdantuma/signalk-radar/radar-server/radar/navico"
 	"github.com/wdantuma/signalk-radar/radar-server/radarserver"
+	"github.com/wdantuma/signalk-radar/radar-server/source"
 	"github.com/wdantuma/signalk-radar/radar-server/source/pcapsource"
+	"github.com/wdantuma/signalk-radar/radar-server/source/udpsource"
 )
 
 type arrayFlag []string
@@ -48,25 +51,28 @@ func main() {
 	enableTls := flag.Bool("tls", false, "Enable tls")
 	tlsCertFile := flag.String("tlscert", "", "Tls certificate file")
 	tlsKeyFile := flag.String("tlskey", "", "Tls key file")
-	serveWebApps := flag.Bool("webapps", true, "Serve webapps")
+	serveWebApps := flag.Bool("webapps", false, "Serve webapps")
 	version := flag.Bool("version", false, "Show version")
 	port := flag.Int("port", listenPort, "Listen port")
 	debug := flag.Bool("debug", false, "Enable debugging")
 	staticPath := flag.String("webapp-path", "./webapps", "Path to webapps")
-	var fileSources arrayFlag
-	flag.Var(&fileSources, "file-source", "Path to pcap file")
-	var radars arrayFlag
-	flag.Var(&radars, "type", "Radar type")
-
+	pcapSource := flag.String("pcap-source", "", "Path to pcap file")
+	udpSource := flag.Bool("udp-source", false, "Use UDP as source")
+	radarType := flag.String("type", "", "Radar type")
 	flag.Parse()
 
-	if len(fileSources) != len(radars) {
-		fmt.Printf("Number of sources and types must be equal\n")
+	if len(*pcapSource) == 0 && !*udpSource {
+		fmt.Printf("A source must be given\n")
 		return
 	}
 
-	if len(fileSources) == 0 {
-		fmt.Printf("At least one source and type must be given\n")
+	if len(*pcapSource) > 0 && *udpSource {
+		fmt.Printf("Only one source may be given\n")
+		return
+	}
+
+	if len(*radarType) == 0 {
+		fmt.Printf("A Radar type must be given\n")
 		return
 	}
 
@@ -92,6 +98,7 @@ func main() {
 	))
 	radarServer := radarserver.NewRadarServer()
 	if *debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
 		radarServer.SetDebug(true)
 		router.Use(loggingMiddleware)
 	}
@@ -101,28 +108,37 @@ func main() {
 		return
 	}
 
-	if len(fileSources) > 0 {
-		for index, fs := range fileSources {
-			source, err := pcapsource.NewPcapSource(fs, true)
-			//source, err := udpsource.NewUdpSource()
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				return
-			}
-			var radar radar.RadarSource
-			switch radars[index] {
-			case "garminxhd":
-				radar = garminxhd.NewGarminXhd(source)
-			case "navico":
-				radar = navico.NewNavico(source)
-			default:
-				fmt.Printf("Radar type %s not supported\n", radars[index])
-				return
-			}
-			radarServer.AddRadar(radar)
-			source.Start()
+	var source source.FrameSourceFactory
+	var err error
+
+	if *udpSource {
+		source, err = udpsource.NewUdpSource()
+		if err != nil {
+			fmt.Printf("%s\n", err)
+			return
 		}
 	}
+
+	if len(*pcapSource) > 0 {
+		source, err = pcapsource.NewPcapSource(*pcapSource, true)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+			return
+		}
+	}
+
+	var radar radar.RadarSource
+	switch *radarType {
+	case "garminxhd":
+		radar = garminxhd.NewGarminXhd(source)
+	case "navico":
+		radar = navico.NewNavico(source)
+	default:
+		fmt.Printf("Radar type %s not supported\n", *radarType)
+		return
+	}
+	radarServer.AddRadar(radar)
+	source.Start()
 
 	radarServer.SetupServer(ctx, "", router)
 
@@ -134,7 +150,7 @@ func main() {
 	}
 
 	// start listening
-	fmt.Printf("Listening on :%d...\n", listenPort)
+	fmt.Printf("radar-server started, Listening on :%d , using %s\n", listenPort, source.Label())
 	server := http.Server{Addr: fmt.Sprintf(":%d", listenPort), Handler: router, TLSConfig: &cfg}
 	if *enableTls {
 		err := server.ListenAndServeTLS("", "")

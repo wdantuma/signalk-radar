@@ -11,7 +11,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}/radar-server/cmd/signalk-radar",
-            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../../samples/navico_and_0183.pcap","--type","navico" ]
+            "args": ["--webapps","--webapp-path","../../webapps","--pcap-source","../../../demo/samples/navico_and_0183.pcap","--type","navico" ]
         },
         {
             "name": "Launch signalk-radar garmin",
@@ -19,7 +19,15 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}/radar-server/cmd/signalk-radar",
-            "args": ["--webapps","--webapp-path","../../webapps","--file-source","../../../samples/garmin_xhd.pcap","--type","garminxhd" ]
+            "args": ["--webapps","--webapp-path","../../webapps","--pcap-source","../../../demo/samples/garmin_xhd.pcap","--type","garminxhd" ]
+        },
+        {
+            "name": "Launch signalk-radar udp",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/radar-server/cmd/signalk-radar",
+            "args": ["--udp-source","--type","navico" ]
         }
     ]
 }

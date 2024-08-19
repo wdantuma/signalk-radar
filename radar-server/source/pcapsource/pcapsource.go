@@ -72,6 +72,10 @@ func (p *pcapSource) RemoveFrameSource(source source.FrameSource) {
 	p.sources = append(p.sources[:index], p.sources[index+1:]...)
 }
 
+func (p *pcapSource) Label() string {
+	return fmt.Sprintf("Pcap source %s", p.file)
+}
+
 func (p *pcapSource) Start() {
 	p.running = true
 	go func() {

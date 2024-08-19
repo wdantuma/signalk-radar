@@ -1,7 +1,6 @@
 package udpsource
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"slices"
@@ -36,7 +35,6 @@ func (fs *udpFrameSource) Start() {
 	fs.running = true
 	go func() {
 		addr, err := net.ResolveUDPAddr("udp", fs.address.String())
-		fmt.Println(fs.address)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -98,4 +96,8 @@ func (p *udpSource) Stop() {
 			e.Stop()
 		}
 	}
+}
+
+func (p *udpSource) Label() string {
+	return "UDP source"
 }

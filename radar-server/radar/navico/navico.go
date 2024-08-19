@@ -3,7 +3,7 @@ package navico
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"log/slog"
 	"time"
 	"unsafe"
 
@@ -198,7 +198,6 @@ func NewNavico(frameSourceFactory source.FrameSourceFactory) *navico {
 
 	InitializeLookupData()
 	locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(236, 6, 7, 5, 6878))
-	//locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(0, 0, 0, 0, 6878))
 	navico := &navico{radarType: TYPE_UNKOWN, label: "Navico", farmeSourceFactory: frameSourceFactory, locatorSource: locatorSource, source: make(chan *radar.RadarMessage), reportSource: nil, dataSource: nil}
 	navico.start()
 	locatorSource.Start()
@@ -303,43 +302,43 @@ func (g *navico) processReport(reportBytes []byte) {
 		reportReader := bytes.NewReader(reportBytes)
 		switch (len << 8) + uint16(reportBytes[0]) {
 		case (18 << 8) + 0x01:
-			fmt.Println("Report 01c4_18")
+			slog.Debug("Report 01c4_18")
 		case (99 << 8) + 0x02:
-			fmt.Println("Report 02c4_99")
+			slog.Debug("Report 02c4_99")
 		case (129 << 8) + 0x03:
-			fmt.Println("Report 03c4_129")
+			slog.Debug("Report 03c4_129")
 			var data RadarReport_03C4_129
 			_ = binary.Read(reportReader, binary.LittleEndian, &data)
 			switch data.Radar_type {
 			case REPORT_TYPE_BR24:
 				g.radarType = TYPE_BR24
-				fmt.Println("BR24")
+				slog.Debug("BR24")
 			case REPORT_TYPE_3G:
 				g.radarType = TYPE_3G
-				fmt.Println("3G")
+				slog.Debug("3G")
 			case REPORT_TYPE_4G:
 				g.radarType = TYPE_4GA
-				fmt.Println("4G")
+				slog.Debug("4G")
 			case REPORT_TYPE_HALO:
 				g.radarType = TYPE_HALOA
-				fmt.Println("HALO")
+				slog.Debug("HALO")
 			default:
-				fmt.Println("Unkown radar type")
+				slog.Debug("Unkown radar type")
 			}
 		case (66 << 8) + 0xc4:
-			fmt.Println("Report 04c4_66")
+			slog.Debug("Report 04c4_66")
 		case (68 << 8) + 0x06:
-			fmt.Println("Report 06c4_68")
+			slog.Debug("Report 06c4_68")
 		case (74 << 8) + 0x06:
-			fmt.Println("Report 06c4_74")
+			slog.Debug("Report 06c4_74")
 		case (22 << 8) + 0x08, (21 << 8) + 0x08:
-			fmt.Println("Report 08c4_21")
+			slog.Debug("Report 08c4_21")
 		case (18 << 8) + 0x08:
-			fmt.Println("Report 08c4_18")
+			slog.Debug("Report 08c4_18")
 		case (66 << 8) + 0x12:
-			fmt.Println("Report 12c4_66")
+			slog.Debug("Report 12c4_66")
 		default:
-			fmt.Println("Received unkown radar report")
+			slog.Debug("Received unkown radar report")
 		}
 	}
 
@@ -352,7 +351,7 @@ func modSpokes(angle uint32) uint32 {
 func (g *navico) processData(dataBytes []byte) {
 
 	if len(dataBytes) < 9 {
-		fmt.Printf("Strange header length")
+		slog.Debug("Strange header length")
 		return
 	}
 
@@ -375,12 +374,12 @@ func (g *navico) processData(dataBytes []byte) {
 		binary.Read(dataReader, binary.LittleEndian, &common)
 
 		if common.HeaderLen != 0x18 {
-			fmt.Printf("Strange header length")
+			slog.Debug("Strange header length")
 			return
 		}
 
 		if common.Status != 0x02 && common.Status != 0x12 {
-			fmt.Printf("Strange status")
+			slog.Debug("Strange status")
 			return
 		}
 

@@ -1,6 +1,7 @@
 package source
 
 type FrameSourceFactory interface {
+	Label() string
 	CreateFrameSource(label string, address Address) FrameSource
 	RemoveFrameSource(source FrameSource)
 	Start()
