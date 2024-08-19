@@ -1,3 +1,4 @@
+#docker buildx build --platform linux/arm64,linux/amd64 --tag wdantuma/signalk-radar-demo:latest --push .
 FROM node:20-alpine AS build
 RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev
 WORKDIR /src
@@ -16,7 +17,7 @@ WORKDIR /src/signalk-radar/signalk-radar-plugin
 RUN npm i
 RUN npm run build
 WORKDIR /src/signalk-radar/radar-server
-RUN GOARCH=amd64 GOOS=linux go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
+RUN go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 FROM node:20-alpine
 RUN apk add tcpreplay curl unzip
 WORKDIR /app
