@@ -1,0 +1,18 @@
+[
+  {
+    "context": "vessels.self",
+    "updates": [
+      {
+        "values": [
+          {
+            "path": "",
+            "value": {
+              "mmsi": "244060807",
+              "name": "Demo"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

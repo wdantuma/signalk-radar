@@ -1,0 +1,10 @@
+{
+    "configuration": {
+      "radar": {
+        "radarServerUrl": "http://localhost:3001",
+        "enable": false
+      }
+    },
+    "enabled": true,
+    "enableDebug": false
+}

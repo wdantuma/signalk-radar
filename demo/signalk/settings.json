@@ -1,0 +1,27 @@
+{
+  "interfaces": {},
+  "ssl": false,
+  "pipedProviders": [
+    {
+      "pipeElements": [
+        {
+          "type": "providers/simple",
+          "options": {
+            "logging": true,
+            "type": "NMEA0183",
+            "subOptions": {
+              "validateChecksum": false,
+              "type": "udp",
+              "host": "",
+              "port": "10110",
+              "overrideTimestamp": false,
+              "sentenceEvent": "nmea1data"
+            }
+          }
+        }
+      ],
+      "id": "NMEA-UDP",
+      "enabled": true
+    }    
+  ]  
+}
