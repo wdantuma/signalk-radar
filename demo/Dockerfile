@@ -15,7 +15,7 @@ RUN git clone --branch radar-support https://github.com/wdantuma/freeboard-sk.gi
     NG_CLI_ANALYTICS=ci npm run build
 RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     cd signalk-radar && \
-    git checkout 6b6bfe3ef69728ddd7cfb06ae5534e4ab52c8094 && \
+    git checkout 6ad3fc04ca5db539cfee497c6b959c2431b3746f && \
     cd signalk-radar-plugin && npm i && npm run build && \
     cd ../radar-server && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
