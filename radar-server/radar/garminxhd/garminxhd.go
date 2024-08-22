@@ -63,6 +63,13 @@ func (g *garminxhd) MaxSpokeLen() int {
 	return GARMIN_XHD_MAX_SPOKE_LEN
 }
 
+func (g *garminxhd) Legend() map[string]radar.LegendEntry {
+	legend := map[string]radar.LegendEntry{
+		"0": {Type: "normal", Colour: "#ffffffff"},
+	}
+	return legend
+}
+
 func (g *garminxhd) start() {
 	go func() {
 		reportSource := g.reportSource.Source()

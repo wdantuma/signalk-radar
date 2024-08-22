@@ -72,7 +72,7 @@ func (server *radarServer) MarshallToJSON(req *http.Request) ([]byte, error) {
 	var result map[string]radar.Radar = make(map[string]radar.Radar)
 	for id, r := range server.radars {
 		streamUrl := url.URL{Scheme: "http", Host: req.Host, Path: fmt.Sprintf("/v1/api/stream/%s", id)}
-		result[id] = radar.Radar{Id: id, Name: r.Name(), Spokes: r.Spokes(), MaxSpokeLen: r.MaxSpokeLen(), StreamUrl: streamUrl.String()}
+		result[id] = radar.Radar{Id: id, Name: r.Name(), Spokes: r.Spokes(), MaxSpokeLen: r.MaxSpokeLen(), StreamUrl: streamUrl.String(), Legend: r.Legend()}
 	}
 	return json.Marshal(result)
 }

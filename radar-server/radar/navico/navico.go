@@ -221,6 +221,61 @@ func (g *navico) MaxSpokeLen() int {
 	return NAVICO_MAX_SPOKE_LEN
 }
 
+func (g *navico) Legend() map[string]radar.LegendEntry {
+	legend := map[string]radar.LegendEntry{
+		"43": {Type: "Normal", Colour: "#a93d1eff"},
+		"44": {Type: "Normal", Colour: "#b84c0fff"},
+		"32": {Type: "Normal", Colour: "#006bc8ff"},
+		"36": {Type: "Normal", Colour: "#3d2e8aff"},
+		"41": {Type: "Normal", Colour: "#8a1e3dff"},
+		"33": {Type: "Normal", Colour: "#0f5cb8ff"},
+		"39": {Type: "Normal", Colour: "#6b005cff"},
+		"34": {Type: "Normal", Colour: "#1e4ca9ff"},
+		"37": {Type: "Normal", Colour: "#4c1e7bff"},
+		"42": {Type: "Normal", Colour: "#992e2eff"},
+		"35": {Type: "Normal", Colour: "#2e3d99ff"},
+		"38": {Type: "Normal", Colour: "#5c0f6bff"},
+		"40": {Type: "Normal", Colour: "#7b0f4cff"},
+		"13": {Type: "History", Colour: "#ffffff34"},
+		"14": {Type: "History", Colour: "#ffffff38"},
+		"7":  {Type: "History", Colour: "#ffffff1c"},
+		"17": {Type: "History", Colour: "#ffffff44"},
+		"18": {Type: "History", Colour: "#ffffff48"},
+		"12": {Type: "History", Colour: "#ffffff30"},
+		"5":  {Type: "History", Colour: "#ffffff14"},
+		"0":  {Type: "History", Colour: "#ffffff00"},
+		"26": {Type: "History", Colour: "#ffffff68"},
+		"3":  {Type: "History", Colour: "#ffffff0c"},
+		"30": {Type: "History", Colour: "#ffffff78"},
+		"6":  {Type: "History", Colour: "#ffffff18"},
+		"4":  {Type: "History", Colour: "#ffffff10"},
+		"22": {Type: "History", Colour: "#ffffff58"},
+		"15": {Type: "History", Colour: "#ffffff3c"},
+		"10": {Type: "History", Colour: "#ffffff28"},
+		"1":  {Type: "History", Colour: "#ffffff04"},
+		"28": {Type: "History", Colour: "#ffffff70"},
+		"16": {Type: "History", Colour: "#ffffff40"},
+		"25": {Type: "History", Colour: "#ffffff64"},
+		"9":  {Type: "History", Colour: "#ffffff24"},
+		"27": {Type: "History", Colour: "#ffffff6c"},
+		"31": {Type: "History", Colour: "#ffffff7c"},
+		"21": {Type: "History", Colour: "#ffffff54"},
+		"24": {Type: "History", Colour: "#ffffff60"},
+		"29": {Type: "History", Colour: "#ffffff74"},
+		"20": {Type: "History", Colour: "#ffffff50"},
+		"23": {Type: "History", Colour: "#ffffff5c"},
+		"2":  {Type: "History", Colour: "#ffffff08"},
+		"8":  {Type: "History", Colour: "#ffffff20"},
+		"11": {Type: "History", Colour: "#ffffff2c"},
+		"19": {Type: "History", Colour: "#ffffff4c"},
+		"46": {Type: "DopplerApproaching", Colour: "#00c8c8ff"},
+		"47": {Type: "DopplerReceding", Colour: "#90d0f0ff"},
+		"45": {Type: "TargetBorder", Colour: "#c8c8c8ff"},
+	}
+
+	return legend
+}
+
 func (g *navico) start() {
 	go func() {
 		locatorSource := g.locatorSource.Source()
