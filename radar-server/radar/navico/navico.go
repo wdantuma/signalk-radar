@@ -46,30 +46,12 @@ const (
 	LOOKUP_SPOKE_HIGH_APPROACHING
 )
 
-var lookupData []uint8 = make([]uint8, 6*256)
-
-var lookupNibbleToByte = [...]uint8{
-	0,    // 0
-	0x32, // 1
-	0x40, // 2
-	0x4e, // 3
-	0x5c, // 4
-	0x6a, // 5
-	0x78, // 6
-	0x86, // 7
-	0x94, // 8
-	0xa2, // 9
-	0xb0, // a
-	0xbe, // b
-	0xcc, // c
-	0xda, // d
-	0xe8, // e
-	0xf4, // f
-}
-
 type navico struct {
 	label              string
 	radarType          RadarType
+	doppler            radar.DopplerMode
+	legend             radar.Legend
+	pixelToBlob        []uint8
 	source             chan *radar.RadarMessage
 	farmeSourceFactory source.FrameSourceFactory
 	locatorSource      source.FrameSource
@@ -159,46 +141,53 @@ func lookupIndex(t LookupSpoke, i int) int {
 	return int(t)*256 + int(i)
 }
 
-func InitializeLookupData() {
-	if lookupData[lookupIndex(5, 255)] == 0 {
-		for j := 0; j <= 255; j++ {
-			low := lookupNibbleToByte[(j & 0x0f)]
-			high := lookupNibbleToByte[(j&0xf0)>>4]
+func (r *navico) InitializeLookupData() {
+	var lookupData []uint8 = make([]uint8, 6*256)
+	for j := 0; j < 256; j++ {
+		low := uint8(j) & 0x0f
+		high := (uint8(j) >> 4) & 0x0f
 
-			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL, j)] = low
-			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL, j)] = high
+		lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL, j)] = low
+		switch low {
+		case 0x0f:
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = r.legend.DopplerApproaching
+		case 0x0e:
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = r.legend.DopplerReceding
+		default:
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = low
+		}
+		switch low {
+		case 0x0f:
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = r.legend.DopplerApproaching
+		default:
+			lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
+		}
 
-			switch low {
-			case 0xf4:
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xff
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = 0xff
-			case 0xe8:
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = 0xfe
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
-			default:
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_BOTH, j)] = low
-				lookupData[lookupIndex(LOOKUP_SPOKE_LOW_APPROACHING, j)] = low
-			}
-			switch high {
-			case 0xf4:
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xff
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = 0xff
-			case 0xe8:
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = 0xfe
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
-			default:
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = high
-				lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
-			}
+		lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL, j)] = high
+		switch high {
+		case 0x0f:
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = r.legend.DopplerApproaching
+		case 0x0e:
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = r.legend.DopplerReceding
+		default:
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_BOTH, j)] = high
+		}
+		switch high {
+		case 0x0f:
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = r.legend.DopplerApproaching
+		default:
+			lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_APPROACHING, j)] = high
 		}
 	}
+	r.pixelToBlob = lookupData
 }
 
 func NewNavico(frameSourceFactory source.FrameSourceFactory) *navico {
 
-	InitializeLookupData()
 	locatorSource := frameSourceFactory.CreateFrameSource("Navico locator", source.NewAddress(236, 6, 7, 5, 6878))
-	navico := &navico{radarType: TYPE_UNKOWN, label: "Navico", farmeSourceFactory: frameSourceFactory, locatorSource: locatorSource, source: make(chan *radar.RadarMessage), reportSource: nil, dataSource: nil}
+	navico := &navico{radarType: TYPE_UNKOWN, label: "Navico", farmeSourceFactory: frameSourceFactory, locatorSource: locatorSource, source: make(chan *radar.RadarMessage), reportSource: nil, dataSource: nil, doppler: radar.Both, legend: radar.DefaultLegend(true, 16), pixelToBlob: make([]uint8, 0)}
+	navico.InitializeLookupData()
+
 	navico.start()
 	locatorSource.Start()
 
@@ -221,59 +210,8 @@ func (g *navico) MaxSpokeLen() int {
 	return NAVICO_MAX_SPOKE_LEN
 }
 
-func (g *navico) Legend() map[string]radar.LegendEntry {
-	legend := map[string]radar.LegendEntry{
-		"43": {Type: "Normal", Colour: "#a93d1eff"},
-		"44": {Type: "Normal", Colour: "#b84c0fff"},
-		"32": {Type: "Normal", Colour: "#006bc8ff"},
-		"36": {Type: "Normal", Colour: "#3d2e8aff"},
-		"41": {Type: "Normal", Colour: "#8a1e3dff"},
-		"33": {Type: "Normal", Colour: "#0f5cb8ff"},
-		"39": {Type: "Normal", Colour: "#6b005cff"},
-		"34": {Type: "Normal", Colour: "#1e4ca9ff"},
-		"37": {Type: "Normal", Colour: "#4c1e7bff"},
-		"42": {Type: "Normal", Colour: "#992e2eff"},
-		"35": {Type: "Normal", Colour: "#2e3d99ff"},
-		"38": {Type: "Normal", Colour: "#5c0f6bff"},
-		"40": {Type: "Normal", Colour: "#7b0f4cff"},
-		"13": {Type: "History", Colour: "#ffffff34"},
-		"14": {Type: "History", Colour: "#ffffff38"},
-		"7":  {Type: "History", Colour: "#ffffff1c"},
-		"17": {Type: "History", Colour: "#ffffff44"},
-		"18": {Type: "History", Colour: "#ffffff48"},
-		"12": {Type: "History", Colour: "#ffffff30"},
-		"5":  {Type: "History", Colour: "#ffffff14"},
-		"0":  {Type: "History", Colour: "#ffffff00"},
-		"26": {Type: "History", Colour: "#ffffff68"},
-		"3":  {Type: "History", Colour: "#ffffff0c"},
-		"30": {Type: "History", Colour: "#ffffff78"},
-		"6":  {Type: "History", Colour: "#ffffff18"},
-		"4":  {Type: "History", Colour: "#ffffff10"},
-		"22": {Type: "History", Colour: "#ffffff58"},
-		"15": {Type: "History", Colour: "#ffffff3c"},
-		"10": {Type: "History", Colour: "#ffffff28"},
-		"1":  {Type: "History", Colour: "#ffffff04"},
-		"28": {Type: "History", Colour: "#ffffff70"},
-		"16": {Type: "History", Colour: "#ffffff40"},
-		"25": {Type: "History", Colour: "#ffffff64"},
-		"9":  {Type: "History", Colour: "#ffffff24"},
-		"27": {Type: "History", Colour: "#ffffff6c"},
-		"31": {Type: "History", Colour: "#ffffff7c"},
-		"21": {Type: "History", Colour: "#ffffff54"},
-		"24": {Type: "History", Colour: "#ffffff60"},
-		"29": {Type: "History", Colour: "#ffffff74"},
-		"20": {Type: "History", Colour: "#ffffff50"},
-		"23": {Type: "History", Colour: "#ffffff5c"},
-		"2":  {Type: "History", Colour: "#ffffff08"},
-		"8":  {Type: "History", Colour: "#ffffff20"},
-		"11": {Type: "History", Colour: "#ffffff2c"},
-		"19": {Type: "History", Colour: "#ffffff4c"},
-		"46": {Type: "DopplerApproaching", Colour: "#00c8c8ff"},
-		"47": {Type: "DopplerReceding", Colour: "#90d0f0ff"},
-		"45": {Type: "TargetBorder", Colour: "#c8c8c8ff"},
-	}
-
-	return legend
+func (g *navico) Legend() radar.Legend {
+	return g.legend
 }
 
 func (g *navico) start() {
@@ -470,12 +408,30 @@ func (g *navico) processData(dataBytes []byte) {
 
 		binary.Read(dataReader, binary.LittleEndian, &data)
 
+		var lowNibbleIndex LookupSpoke
+		switch g.doppler {
+		case radar.None:
+			lowNibbleIndex = LOOKUP_SPOKE_LOW_NORMAL
+		case radar.Both:
+			lowNibbleIndex = LOOKUP_SPOKE_LOW_BOTH
+		case radar.Approaching:
+			lowNibbleIndex = LOOKUP_SPOKE_LOW_APPROACHING
+		}
+		var highNibbleIndex LookupSpoke
+		switch g.doppler {
+		case radar.None:
+			highNibbleIndex = LOOKUP_SPOKE_HIGH_NORMAL
+		case radar.Both:
+			highNibbleIndex = LOOKUP_SPOKE_HIGH_BOTH
+		case radar.Approaching:
+			highNibbleIndex = LOOKUP_SPOKE_HIGH_APPROACHING
+		}
+
 		var data_highres []uint8 = make([]uint8, NAVICO_MAX_SPOKE_LEN)
 
-		doppler := 0 //TODO set this
 		for i := 0; i < NAVICO_MAX_SPOKE_LEN/2; i++ {
-			data_highres[2*i] = lookupData[lookupIndex(LOOKUP_SPOKE_LOW_NORMAL+LookupSpoke(doppler), int(data[i]))]
-			data_highres[2*i+1] = lookupData[lookupIndex(LOOKUP_SPOKE_HIGH_NORMAL+LookupSpoke(doppler), int(data[i]))]
+			data_highres[2*i] = g.pixelToBlob[lookupIndex(lowNibbleIndex, int(data[i]))]
+			data_highres[2*i+1] = g.pixelToBlob[lookupIndex(highNibbleIndex, int(data[i]))]
 		}
 
 		range_meters = int(float32(range_meters) * 1.66) // strange factor needed to display correctly on map
