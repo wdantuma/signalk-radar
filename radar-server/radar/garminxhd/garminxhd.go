@@ -115,12 +115,12 @@ func (g *garminxhd) processData(dataBytes []byte) {
 			message := radar.RadarMessage{
 				Spokes: make([]*radar.RadarMessage_Spoke, 1),
 			}
+			time := uint64(time.Now().UnixMilli())
 			message.Spokes[0] = &radar.RadarMessage_Spoke{
-				Angle:   uint32(line.Angle / 8),
-				Bearing: 0,
-				Range:   uint32(line.RangeMeters),
-				Data:    data,
-				Time:    uint64(time.Now().UnixMilli()),
+				Angle: uint32(line.Angle / 8),
+				Range: uint32(line.RangeMeters),
+				Data:  data,
+				Time:  &time,
 			}
 			g.source <- &message
 		}
