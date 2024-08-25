@@ -9,7 +9,7 @@ RUN git clone --branch v2.8.3 https://github.com/SignalK/signalk-server.git && \
     npm run build
 RUN git clone --branch radar-support https://github.com/wdantuma/freeboard-sk.git && \
     cd freeboard-sk && \
-    git checkout 0d639854f782530433596c215b0381504b0516ff && \
+    git checkout 069a4388941b5dde1205d5fd83c22f73a16008e4 && \
     sed -ri 's/"declaration"/"skipLibCheck": true,\n"declaration"/' tsconfig.json && \
     npm i && \
     NG_CLI_ANALYTICS=ci npm run build
