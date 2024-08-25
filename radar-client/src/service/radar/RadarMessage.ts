@@ -96,14 +96,20 @@ export class RadarMessage extends pb_1.Message {
 }
 export namespace RadarMessage {
     export class Spoke extends pb_1.Message {
-        #one_of_decls: number[][] = [];
-        constructor(data?: any[] | {
+        #one_of_decls: number[][] = [[2], [4], [6], [7]];
+        constructor(data?: any[] | ({
             angle?: number;
-            bearing?: number;
             range?: number;
-            time?: number;
             data?: Uint8Array;
-        }) {
+        } & (({
+            bearing?: number;
+        }) | ({
+            time?: number;
+        }) | ({
+            lat?: number;
+        }) | ({
+            lon?: number;
+        })))) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
@@ -118,6 +124,12 @@ export namespace RadarMessage {
                 }
                 if ("time" in data && data.time != undefined) {
                     this.time = data.time;
+                }
+                if ("lat" in data && data.lat != undefined) {
+                    this.lat = data.lat;
+                }
+                if ("lon" in data && data.lon != undefined) {
+                    this.lon = data.lon;
                 }
                 if ("data" in data && data.data != undefined) {
                     this.data = data.data;
@@ -134,7 +146,10 @@ export namespace RadarMessage {
             return pb_1.Message.getFieldWithDefault(this, 2, 0) as number;
         }
         set bearing(value: number) {
-            pb_1.Message.setField(this, 2, value);
+            pb_1.Message.setOneofField(this, 2, this.#one_of_decls[0], value);
+        }
+        get has_bearing() {
+            return pb_1.Message.getField(this, 2) != null;
         }
         get range() {
             return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -146,7 +161,28 @@ export namespace RadarMessage {
             return pb_1.Message.getFieldWithDefault(this, 4, 0) as number;
         }
         set time(value: number) {
-            pb_1.Message.setField(this, 4, value);
+            pb_1.Message.setOneofField(this, 4, this.#one_of_decls[1], value);
+        }
+        get has_time() {
+            return pb_1.Message.getField(this, 4) != null;
+        }
+        get lat() {
+            return pb_1.Message.getFieldWithDefault(this, 6, 0) as number;
+        }
+        set lat(value: number) {
+            pb_1.Message.setOneofField(this, 6, this.#one_of_decls[2], value);
+        }
+        get has_lat() {
+            return pb_1.Message.getField(this, 6) != null;
+        }
+        get lon() {
+            return pb_1.Message.getFieldWithDefault(this, 7, 0) as number;
+        }
+        set lon(value: number) {
+            pb_1.Message.setOneofField(this, 7, this.#one_of_decls[3], value);
+        }
+        get has_lon() {
+            return pb_1.Message.getField(this, 7) != null;
         }
         get data() {
             return pb_1.Message.getFieldWithDefault(this, 5, new Uint8Array(0)) as Uint8Array;
@@ -154,11 +190,49 @@ export namespace RadarMessage {
         set data(value: Uint8Array) {
             pb_1.Message.setField(this, 5, value);
         }
+        get _bearing() {
+            const cases: {
+                [index: number]: "none" | "bearing";
+            } = {
+                0: "none",
+                2: "bearing"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [2])];
+        }
+        get _time() {
+            const cases: {
+                [index: number]: "none" | "time";
+            } = {
+                0: "none",
+                4: "time"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [4])];
+        }
+        get _lat() {
+            const cases: {
+                [index: number]: "none" | "lat";
+            } = {
+                0: "none",
+                6: "lat"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [6])];
+        }
+        get _lon() {
+            const cases: {
+                [index: number]: "none" | "lon";
+            } = {
+                0: "none",
+                7: "lon"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [7])];
+        }
         static fromObject(data: {
             angle?: number;
             bearing?: number;
             range?: number;
             time?: number;
+            lat?: number;
+            lon?: number;
             data?: Uint8Array;
         }): Spoke {
             const message = new Spoke({});
@@ -174,6 +248,12 @@ export namespace RadarMessage {
             if (data.time != null) {
                 message.time = data.time;
             }
+            if (data.lat != null) {
+                message.lat = data.lat;
+            }
+            if (data.lon != null) {
+                message.lon = data.lon;
+            }
             if (data.data != null) {
                 message.data = data.data;
             }
@@ -185,6 +265,8 @@ export namespace RadarMessage {
                 bearing?: number;
                 range?: number;
                 time?: number;
+                lat?: number;
+                lon?: number;
                 data?: Uint8Array;
             } = {};
             if (this.angle != null) {
@@ -199,6 +281,12 @@ export namespace RadarMessage {
             if (this.time != null) {
                 data.time = this.time;
             }
+            if (this.lat != null) {
+                data.lat = this.lat;
+            }
+            if (this.lon != null) {
+                data.lon = this.lon;
+            }
             if (this.data != null) {
                 data.data = this.data;
             }
@@ -210,12 +298,16 @@ export namespace RadarMessage {
             const writer = w || new pb_1.BinaryWriter();
             if (this.angle != 0)
                 writer.writeUint32(1, this.angle);
-            if (this.bearing != 0)
+            if (this.has_bearing)
                 writer.writeUint32(2, this.bearing);
             if (this.range != 0)
                 writer.writeUint32(3, this.range);
-            if (this.time != 0)
+            if (this.has_time)
                 writer.writeUint64(4, this.time);
+            if (this.has_lat)
+                writer.writeInt64(6, this.lat);
+            if (this.has_lon)
+                writer.writeInt64(7, this.lon);
             if (this.data.length)
                 writer.writeBytes(5, this.data);
             if (!w)
@@ -238,6 +330,12 @@ export namespace RadarMessage {
                         break;
                     case 4:
                         message.time = reader.readUint64();
+                        break;
+                    case 6:
+                        message.lat = reader.readInt64();
+                        break;
+                    case 7:
+                        message.lon = reader.readInt64();
                         break;
                     case 5:
                         message.data = reader.readBytes();
