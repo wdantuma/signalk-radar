@@ -1,6 +1,8 @@
 #docker buildx build --platform linux/arm64,linux/amd64 --tag wdantuma/signalk-radar-demo:latest --push .
 FROM node:20-alpine AS build
-RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev
+RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev gcc curl bash && \
+    curl –proto ‘=https’ –tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
+ENV PATH="$PATH:/root/.cargo/bin"
 WORKDIR /src
 RUN git clone --branch v2.8.3 https://github.com/SignalK/signalk-server.git && \
     cd signalk-server && \
@@ -19,6 +21,11 @@ RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     cd signalk-radar-plugin && npm i && npm run build && \
     cd ../radar-server && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
+RUN git clone https://github.com/keesverruijt/mayara.git && \
+    cd mayara && \
+    git checkout 0095ed3e157886319d01c8bf0ba9e3275ca8a6ee && \
+    . "$HOME/.cargo/env" && \
+    cargo build --release
 FROM node:20-alpine
 RUN apk add tcpreplay curl unzip
 WORKDIR /app
@@ -36,6 +43,7 @@ RUN chmod +x start.sh
 COPY --from=build /src/signalk-server /app/signalk-server
 COPY --from=build /src/freeboard-sk/public /app/signalk-server/node_modules/@signalk/freeboard-sk/public
 COPY --from=build /src/signalk-radar/radar-server/build /app/signalk-radar
+COPY --from=build /src/mayara/target/release /app/mayara
 RUN cd signalk && \
     npm i @signalk/charts-plugin
 COPY --from=build /src/signalk-radar/signalk-radar-plugin /app/signalk/node_modules/signalk-radar-plugin
