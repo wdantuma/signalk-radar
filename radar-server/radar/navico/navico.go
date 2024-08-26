@@ -434,8 +434,6 @@ func (g *navico) processData(dataBytes []byte) {
 			data_highres[2*i+1] = g.pixelToBlob[lookupIndex(highNibbleIndex, int(data[i]))]
 		}
 
-		range_meters = int(float32(range_meters) * 1.66) // strange factor needed to display correctly on map
-
 		time := uint64(time.Now().UnixMilli())
 		message.Spokes[scanline] = &radar.RadarMessage_Spoke{
 			Angle: uint32(modSpokes(uint32(br4g.Angle / 2))),
