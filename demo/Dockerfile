@@ -23,7 +23,7 @@ RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 RUN git clone https://github.com/keesverruijt/mayara.git && \
     cd mayara && \
-    git checkout 0095ed3e157886319d01c8bf0ba9e3275ca8a6ee && \
+    git checkout cbfe6a27eb959cc655cb38282958c457480db01d && \
     . "$HOME/.cargo/env" && \
     cargo build --release
 FROM node:20-alpine
@@ -37,7 +37,7 @@ RUN cd signalk && \
     unzip -q charts.zip && \
     rm charts.zip
 COPY signalk signalk
-COPY samples/navico_and_0183.pcap .
+COPY samples/halo_and_0183.pcap .
 COPY start.sh .
 RUN chmod +x start.sh
 COPY --from=build /src/signalk-server /app/signalk-server
