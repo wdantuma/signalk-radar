@@ -23,7 +23,7 @@ RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 RUN git clone https://github.com/keesverruijt/mayara.git && \
     cd mayara && \
-    git checkout cbfe6a27eb959cc655cb38282958c457480db01d && \
+    git checkout 5952e073b6657995531a6f69f77b178a2a90703a && \
     . "$HOME/.cargo/env" && \
     cargo build --release
 FROM node:20-alpine
