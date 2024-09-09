@@ -11,7 +11,7 @@ RUN git clone --branch v2.9.0 https://github.com/SignalK/signalk-server.git && \
     npm run build
 RUN git clone --branch radar-support https://github.com/wdantuma/freeboard-sk.git && \
     cd freeboard-sk && \
-    git checkout 2c4860976887ffbcd313211c9da6c6642f5b6f23 && \
+    git checkout 20413a96185057d4c67607a30f1f406d38d9d81e && \
     sed -ri 's/"declaration"/"skipLibCheck": true,\n"declaration"/' tsconfig.json && \
     npm i && \
     NG_CLI_ANALYTICS=ci npm run build
@@ -23,7 +23,7 @@ RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 RUN git clone https://github.com/keesverruijt/mayara.git && \
     cd mayara && \
-    git checkout 46af83b33bb02070f6b9be11387a291399cdb08e && \
+    git checkout ae96adbd70f40dea8db506d94f934ca01dcc0b83 && \
     . "$HOME/.cargo/env" && \
     cargo build --release
 FROM node:20-alpine
