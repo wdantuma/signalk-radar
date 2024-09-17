@@ -23,7 +23,7 @@ RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 RUN git clone https://github.com/keesverruijt/mayara.git && \
     cd mayara && \
-    git checkout ae96adbd70f40dea8db506d94f934ca01dcc0b83 && \
+    git checkout 2530c1896b80cf9c956456275d70651d2b4baed9 && \
     . "$HOME/.cargo/env" && \
     cargo build --release
 FROM node:20-alpine
@@ -43,7 +43,7 @@ RUN chmod +x start.sh
 COPY --from=build /src/signalk-server /app/signalk-server
 COPY --from=build /src/freeboard-sk/public /app/signalk-server/node_modules/@signalk/freeboard-sk/public
 COPY --from=build /src/signalk-radar/radar-server/build /app/signalk-radar
-COPY --from=build /src/mayara/target/release /app/mayara
+COPY --from=build /src/mayara/target/release/mayara /app/mayara
 RUN cd signalk && \
     npm i @signalk/charts-plugin
 COPY --from=build /src/signalk-radar/signalk-radar-plugin /app/signalk/node_modules/signalk-radar-plugin
