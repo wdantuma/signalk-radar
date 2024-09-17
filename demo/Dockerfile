@@ -4,7 +4,7 @@ RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev gcc 
     curl –proto ‘=https’ –tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
 ENV PATH="$PATH:/root/.cargo/bin"
 WORKDIR /src
-RUN git clone --branch v2.9.0 https://github.com/SignalK/signalk-server.git && \
+RUN git clone --branch v2.11.0 https://github.com/SignalK/signalk-server.git && \
     cd signalk-server && \
     npm i && sed -ri 's/ && npm run build:docs//' package.json && \
     npm run build:workspaces && \
