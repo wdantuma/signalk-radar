@@ -1,6 +1,6 @@
 #docker buildx build --platform linux/arm64,linux/amd64 --tag wdantuma/signalk-radar-demo:latest --push .
 FROM node:20-alpine AS build
-RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev gcc curl bash && \
+RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev gcc curl perl pkgconf bash openssl-dev openssl-libs-static && \
     curl –proto ‘=https’ –tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
 ENV PATH="$PATH:/root/.cargo/bin"
 WORKDIR /src
