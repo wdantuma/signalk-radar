@@ -38,40 +38,104 @@
           },
           "maxSpokeLen": {
             "type": "integer",
-            "description": "Number of \"measurements\" in one spoke"
+            "description": "Number of \"values\" in one spoke"
           },
           "streamUrl": {
             "type": "string",
             "description": "Websocket stream of this radar"
           },
-          "supportedRanges": {
-            "type": "array",
-            "items": {
-              "type": "integer"
-            },
-            "description": "Supported ranges of this radar in KM"
+          "controlUrl": {
+            "type": "string",
+            "description": "control websocket of this radar"
           },
-          "range": {
-            "type": "integer",
-            "description": "Current selected range"
+          "legend":{
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LegendEntry"
+            }
           },
-          "supportedRPM": {
-            "type": "array",
-            "items": {
-              "type": "integer"
-            },
-            "description": "Supported RPM'S of this radar in revolutions/min"
+          "controls":{
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ControlEntry"
+            }
+          }          
+        }
+      },
+      "LegendEntry": {
+        "type":"object",
+        "description":"Type and color of a spoke value",
+        "required":[
+          "type",
+          "color"
+        ],
+        "properties": {
+          "type": {
+            "type":"string",
+            "description":"Value type"
           },
-          "rpm": {
-            "type": "integer",
-            "description": "Current selected rpm"
-          },
-          "gain": {
-            "type": "number",
-            "description": "Current selected gain factor 0 to 1 ( 0 to 100%)",
-            "minimum": 0,
-            "maximum": 1
+          "color": {
+            "type":"string",
+            "description":"Color"
           }
+        }
+      },
+      "ControlEntry": {
+        "type":"object",
+        "description":"Description of a radar control",
+        "required":[
+          "name"
+        ],
+        "properties":{
+          "name":{
+            "type":"string",
+             "description":"Control name"
+          },
+          "minValue":{
+            "type":"number"
+          },
+          "maxValue":{
+            "type":"number"
+          },
+          "stepValue":{
+            "type":"number"
+          },
+          "descriptions":{
+            "type":"object",
+            "additionalProperties": {
+              "type":"string"
+            }
+          },
+          "validValues":{
+            "type":"array",
+            "items":{
+               "type":"number"
+            }
+          },
+          "unit":{
+            "type":"string"
+          },
+          "hasEnabled":{
+            "type":"boolean"
+          }, 
+          "isReadonly":{
+            "type":"boolean"
+          }, 
+          "isStringValue":{
+            "type":"boolean"
+          },
+          "hasAuto":{
+            "type":"boolean"
+          },
+          "hasAutoAdjustable":{
+            "type":"boolean"
+          },          
+          "autoAdjustMinValue":{
+            "type":"number"
+          },
+          "autoAdjustMaxValue":{
+            "type":"number"
+          }          
         }
       }
     }
@@ -83,6 +147,7 @@
         "description": "Get list of configured radars",
         "responses": {
           "default": {
+            "description":"",
             "content": {
               "application/json": {
                 "schema": {
@@ -91,24 +156,556 @@
                     "$ref": "#/components/schemas/RadarModel"
                   },
                   "example": {
-                    "radar-0": {
-                      "id": "radar-0",
-                      "name": "Garmin XHD",
-                      "description":"Garmin radar on radar pole",
-                      "spokes": 1440,
-                      "maxSpokeLen": 705,
-                      "streamUrl": "http://localhost:3001/api/v1/stream/radar-0",
-                      "supportedRanges": [
-                        3710,
-                        88896
-                      ],
-                      "range": 3710,
-                      "supportedRPM": [
-                        24,
-                        48
-                      ],
-                      "rpm": 24,
-                      "gain": 0.8
+                    "id": "radar-1",
+                    "name": "HALO 034 A",
+                    "spokes": 2048,
+                    "maxSpokeLen": 1024,
+                    "streamUrl": "ws://localhost:3002/v1/api/spokes/radar-1",
+                    "controlUrl": "ws://localhost:3002/v1/api/control/radar-1",
+                    "legend": {
+                      "0": {
+                        "type": "Normal",
+                        "color": "#00000000"
+                      },
+                      "1": {
+                        "type": "Normal",
+                        "color": "#0000c8ff"
+                      },
+                      "2": {
+                        "type": "Normal",
+                        "color": "#0000c8ff"
+                      },
+                      "3": {
+                        "type": "Normal",
+                        "color": "#0000c8ff"
+                      },
+                      "4": {
+                        "type": "Normal",
+                        "color": "#0000c8ff"
+                      },
+                      "5": {
+                        "type": "Normal",
+                        "color": "#00c800ff"
+                      },
+                      "6": {
+                        "type": "Normal",
+                        "color": "#00c800ff"
+                      },
+                      "7": {
+                        "type": "Normal",
+                        "color": "#00c800ff"
+                      },
+                      "8": {
+                        "type": "Normal",
+                        "color": "#00c800ff"
+                      },
+                      "9": {
+                        "type": "Normal",
+                        "color": "#00c800ff"
+                      },
+                      "10": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "11": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "12": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "13": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "14": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "15": {
+                        "type": "Normal",
+                        "color": "#c80000ff"
+                      },
+                      "16": {
+                        "type": "TargetBorder",
+                        "color": "#c8c8c8ff"
+                      },
+                      "17": {
+                        "type": "DopplerApproaching",
+                        "color": "#c8c800ff"
+                      },
+                      "18": {
+                        "type": "DopplerReceding",
+                        "color": "#90d0f0ff"
+                      },
+                      "19": {
+                        "type": "History",
+                        "color": "#ffffffff"
+                      },
+                      "20": {
+                        "type": "History",
+                        "color": "#f9f9f9ff"
+                      },
+                      "21": {
+                        "type": "History",
+                        "color": "#f3f3f3ff"
+                      },
+                      "22": {
+                        "type": "History",
+                        "color": "#edededff"
+                      },
+                      "23": {
+                        "type": "History",
+                        "color": "#e7e7e7ff"
+                      },
+                      "24": {
+                        "type": "History",
+                        "color": "#e1e1e1ff"
+                      },
+                      "25": {
+                        "type": "History",
+                        "color": "#dbdbdbff"
+                      },
+                      "26": {
+                        "type": "History",
+                        "color": "#d5d5d5ff"
+                      },
+                      "27": {
+                        "type": "History",
+                        "color": "#cfcfcfff"
+                      },
+                      "28": {
+                        "type": "History",
+                        "color": "#c9c9c9ff"
+                      },
+                      "29": {
+                        "type": "History",
+                        "color": "#c3c3c3ff"
+                      },
+                      "30": {
+                        "type": "History",
+                        "color": "#bdbdbdff"
+                      },
+                      "31": {
+                        "type": "History",
+                        "color": "#b7b7b7ff"
+                      },
+                      "32": {
+                        "type": "History",
+                        "color": "#b1b1b1ff"
+                      },
+                      "33": {
+                        "type": "History",
+                        "color": "#abababff"
+                      },
+                      "34": {
+                        "type": "History",
+                        "color": "#a5a5a5ff"
+                      },
+                      "35": {
+                        "type": "History",
+                        "color": "#9f9f9fff"
+                      },
+                      "36": {
+                        "type": "History",
+                        "color": "#999999ff"
+                      },
+                      "37": {
+                        "type": "History",
+                        "color": "#939393ff"
+                      },
+                      "38": {
+                        "type": "History",
+                        "color": "#8d8d8dff"
+                      },
+                      "39": {
+                        "type": "History",
+                        "color": "#878787ff"
+                      },
+                      "40": {
+                        "type": "History",
+                        "color": "#818181ff"
+                      },
+                      "41": {
+                        "type": "History",
+                        "color": "#7b7b7bff"
+                      },
+                      "42": {
+                        "type": "History",
+                        "color": "#757575ff"
+                      },
+                      "43": {
+                        "type": "History",
+                        "color": "#6f6f6fff"
+                      },
+                      "44": {
+                        "type": "History",
+                        "color": "#696969ff"
+                      },
+                      "45": {
+                        "type": "History",
+                        "color": "#636363ff"
+                      },
+                      "46": {
+                        "type": "History",
+                        "color": "#5d5d5dff"
+                      },
+                      "47": {
+                        "type": "History",
+                        "color": "#575757ff"
+                      },
+                      "48": {
+                        "type": "History",
+                        "color": "#515151ff"
+                      },
+                      "49": {
+                        "type": "History",
+                        "color": "#4b4b4bff"
+                      },
+                      "50": {
+                        "type": "History",
+                        "color": "#454545ff"
+                      }
+                    },
+                    "controls": {
+                      "0": {
+                        "name": "Status",
+                        "minValue": 0,
+                        "maxValue": 5,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Standby",
+                          "2": "Transmit",
+                          "3": "",
+                          "4": "",
+                          "5": "SpinningUp"
+                        },
+                        "validValues": [
+                          1,
+                          2
+                        ]
+                      },
+                      "1": {
+                        "name": "Range",
+                        "minValue": 0,
+                        "maxValue": 177792,
+                        "stepValue": 0.1,
+                        "unit": "m"
+                      },
+                      "2": {
+                        "name": "Mode",
+                        "minValue": 0,
+                        "maxValue": 5,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Custom",
+                          "1": "Harbor",
+                          "2": "Offshore",
+                          "3": "Buoy",
+                          "4": "Weather",
+                          "5": "Bird"
+                        }
+                      },
+                      "3": {
+                        "name": "Gain",
+                        "hasAuto": true,
+                        "hasAutoAdjustable": false,
+                        "autoAdjustMinValue": 0,
+                        "autoAdjustMaxValue": 0,
+                        "minValue": 0,
+                        "maxValue": 100,
+                        "stepValue": 1
+                      },
+                      "4": {
+                        "name": "Sea clutter",
+                        "hasAuto": true,
+                        "hasAutoAdjustable": true,
+                        "autoAdjustMinValue": -50,
+                        "autoAdjustMaxValue": 50,
+                        "minValue": 0,
+                        "maxValue": 100,
+                        "stepValue": 1
+                      },
+                      "5": {
+                        "name": "Sea state",
+                        "minValue": 0,
+                        "maxValue": 2,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Calm",
+                          "1": "Moderate",
+                          "2": "Rough"
+                        }
+                      },
+                      "6": {
+                        "name": "Rain clutter",
+                        "minValue": 0,
+                        "maxValue": 100,
+                        "stepValue": 1
+                      },
+                      "7": {
+                        "name": "Doppler",
+                        "minValue": 0,
+                        "maxValue": 2,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Normal",
+                          "2": "Approaching"
+                        }
+                      },
+                      "8": {
+                        "name": "Doppler speed threshold",
+                        "minValue": 0,
+                        "maxValue": 99,
+                        "stepValue": 0.0625,
+                        "unit": "cm/s"
+                      },
+                      "9": {
+                        "name": "Target trails",
+                        "minValue": 0,
+                        "maxValue": 6,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "15": "15s",
+                          "30": "30s",
+                          "60": "1 min",
+                          "180": "3 min",
+                          "300": "5 min",
+                          "600": "10 min"
+                        }
+                      },
+                      "10": {
+                        "name": "Doppler trails only",
+                        "minValue": 0,
+                        "maxValue": 1,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "On"
+                        }
+                      },
+                      "12": {
+                        "name": "Noise rejection",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "13": {
+                        "name": "Target boost",
+                        "minValue": 0,
+                        "maxValue": 2,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "High"
+                        }
+                      },
+                      "14": {
+                        "name": "Target expansion",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "15": {
+                        "name": "Interference rejection",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "16": {
+                        "name": "Target separation",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "17": {
+                        "name": "Local interference rejection",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "18": {
+                        "name": "Fast scan",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Normal",
+                          "1": "Medium",
+                          "2": "Medium Plus",
+                          "3": "Fast"
+                        }
+                      },
+                      "19": {
+                        "name": "Side lobe suppression",
+                        "hasAuto": true,
+                        "hasAutoAdjustable": false,
+                        "autoAdjustMinValue": 0,
+                        "autoAdjustMaxValue": 0,
+                        "minValue": 0,
+                        "maxValue": 100,
+                        "stepValue": 1
+                      },
+                      "20": {
+                        "name": "No Transmit start",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "21": {
+                        "name": "No Transmit end",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "22": {
+                        "name": "No Transmit start (2)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "23": {
+                        "name": "No Transmit end (2)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "24": {
+                        "name": "No Transmit start (3)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "25": {
+                        "name": "No Transmit end (3)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "26": {
+                        "name": "No Transmit start (4)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "27": {
+                        "name": "No Transmit end (4)",
+                        "hasEnabled": true,
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "28": {
+                        "name": "Accent light",
+                        "minValue": 0,
+                        "maxValue": 3,
+                        "stepValue": 1,
+                        "descriptions": {
+                          "0": "Off",
+                          "1": "Low",
+                          "2": "Medium",
+                          "3": "High"
+                        }
+                      },
+                      "29": {
+                        "name": "Antenna height",
+                        "minValue": 0,
+                        "maxValue": 9900,
+                        "stepValue": 1,
+                        "unit": "cm"
+                      },
+                      "30": {
+                        "name": "Bearing alignment",
+                        "minValue": -180,
+                        "maxValue": 180,
+                        "stepValue": 0.1,
+                        "unit": "Deg"
+                      },
+                      "31": {
+                        "name": "Rotation speed",
+                        "minValue": 0,
+                        "maxValue": 99,
+                        "stepValue": 0.1,
+                        "unit": "RPM",
+                        "isReadOnly": true
+                      },
+                      "32": {
+                        "name": "Operating hours",
+                        "minValue": 0,
+                        "maxValue": 3.4028235e+38,
+                        "stepValue": 1,
+                        "unit": "h",
+                        "isReadOnly": true
+                      },
+                      "33": {
+                        "name": "Model name",
+                        "isStringValue": true,
+                        "isReadOnly": true
+                      },
+                      "34": {
+                        "name": "Firmware version",
+                        "isStringValue": true,
+                        "isReadOnly": true
+                      },
+                      "35": {
+                        "name": "Serial Number",
+                        "isStringValue": true,
+                        "isReadOnly": true
+                      },
+                      "36": {
+                        "name": "Custom name",
+                        "isStringValue": true
+                      }
                     }
                   }
                 }
