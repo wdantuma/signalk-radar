@@ -4,26 +4,26 @@ RUN apk add --no-cache git make musl-dev go python3 py3-pip g++ libpcap-dev gcc 
     curl –proto ‘=https’ –tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
 ENV PATH="$PATH:/root/.cargo/bin"
 WORKDIR /src
-RUN git clone --branch v2.11.0 https://github.com/SignalK/signalk-server.git && \
+RUN git clone --branch v2.12.0 https://github.com/SignalK/signalk-server.git && \
     cd signalk-server && \
     npm i && sed -ri 's/ && npm run build:docs//' package.json && \
     npm run build:workspaces && \
     npm run build
 RUN git clone --branch radar-support https://github.com/wdantuma/freeboard-sk.git && \
     cd freeboard-sk && \
-    git checkout 20413a96185057d4c67607a30f1f406d38d9d81e && \
+    git checkout f797023674a735a6fe6dc326461f954e281fac8c && \
     sed -ri 's/"declaration"/"skipLibCheck": true,\n"declaration"/' tsconfig.json && \
     npm i && \
     NG_CLI_ANALYTICS=ci npm run build
 RUN git clone https://github.com/wdantuma/signalk-radar.git && \
     cd signalk-radar && \
-    git checkout a0fe82bf76472cf4864aff743037de2c1da02fd6 && \
+    git checkout f980c6eeb365dd731b99cc22b099449900972226 && \
     cd signalk-radar-plugin && npm i && npm run build && \
     cd ../radar-server && \
     go build -o build/radar-server -ldflags="-X 'github.com/wdantuma/signalk-radar/radar-server/radarserver.Version=0.0.1'" ./cmd/signalk-radar
 RUN git clone https://github.com/keesverruijt/mayara.git && \
     cd mayara && \
-    git checkout 2530c1896b80cf9c956456275d70651d2b4baed9 && \
+    git checkout 304219f8ebcdff99d7fe1e4d31108f9b552d57fe && \
     . "$HOME/.cargo/env" && \
     cargo build --release
 FROM node:20-alpine
